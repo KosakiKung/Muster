@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ตรวจสอบรายสแกนหน้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ECEEEA;--sf:#fff;--ink:#1B211D;--mut:#667068;--ln:#D5D9D3;--ac:#F5B800;--ok:#1F7A4D;--okb:#DDF1E4;--wn:#9A6700;--wnb:#FBEBC3;--ms:#B3261E;--msb:#F9DAD7;--md:#2F55A4;--mdb:#DBE5F8;--tl:#E4E7E2;--zn:#CBE8D4;--xx:#8A938C;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141814;--sf:#1D231F;--ink:#E8ECE7;--mut:#98A39B;--ln:#333B35;--ok:#6FD39A;--okb:#1D3A2A;--wn:#F2C14E;--wnb:#3F3213;--ms:#F28B82;--msb:#432120;--md:#8FB0F2;--mdb:#1F2C4A;--tl:#2A312C;--zn:#24402F;--xx:#7B857E;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141814;--sf:#1D231F;--ink:#E8ECE7;--mut:#98A39B;--ln:#333B35;--ok:#6FD39A;--okb:#1D3A2A;--wn:#F2C14E;--wnb:#3F3213;--ms:#F28B82;--msb:#432120;--md:#8FB0F2;--mdb:#1F2C4A;--tl:#2A312C;--zn:#24402F;--xx:#7B857E;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.55 "IBM Plex Sans Thai",system-ui,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 56px}
+header{border-top:5px solid var(--ac);padding-top:14px;margin-bottom:18px}
+h1{font-size:1.55rem;margin:0 0 4px;font-weight:700;letter-spacing:-.01em}
+header p{margin:0;color:var(--mut);max-width:60ch}
+button,select,input{font:inherit;color:inherit}
+.drop{display:block;border:2px dashed var(--ln);border-radius:12px;background:var(--sf);padding:28px 18px;text-align:center;cursor:pointer}
+.drop:hover,.drop.on,.drop:focus-within{border-color:var(--ac);background:var(--tl)}
+.drop b{font-size:1.05rem}.drop span{display:block;color:var(--mut);font-size:.9rem;margin-top:2px}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:14px 0 0;padding:0;list-style:none}
+.rules li{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:10px 12px;font-size:.9rem}
+.rules strong{display:block;font-size:.95rem}
+.rules em{font-style:normal;color:var(--mut)}
+#msg{margin:12px 0 0;color:var(--ms);font-weight:500}
+#res{display:none;margin-top:22px}
+.meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 16px;align-items:flex-end;margin-bottom:14px}
+.meta h2{margin:0;font-size:1.2rem}.meta p{margin:2px 0 0;color:var(--mut)}
+.btn{border:1px solid var(--ln);background:var(--sf);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--ink)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#1B211D;font-weight:600}
+.btn:disabled{opacity:.6;cursor:wait}
+:focus-visible{outline:3px solid var(--md);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{border:1px solid var(--ln);background:var(--sf);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:500}
+.chip b{margin-left:6px;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.note{font-size:.88rem;margin:0 0 12px;padding:8px 12px;border-radius:8px;background:var(--okb);color:var(--ok)}
+.note.bad{background:var(--wnb);color:var(--wn)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.tools input,.tools select{border:1px solid var(--ln);background:var(--sf);border-radius:8px;padding:7px 10px;min-width:0}
+.tools input{flex:1 1 200px}
+.key{color:var(--mut);font-size:.84rem;margin:0 0 10px}
+.hd,.row{display:grid;grid-template-columns:2rem minmax(0,1.5fr) repeat(3,minmax(4.2rem,.5fr)) minmax(0,2fr);gap:8px 12px;align-items:center}
+.hd{padding:0 14px 6px 18px;color:var(--mut);font-size:.84rem;font-weight:500}
+.row{background:var(--sf);border:1px solid var(--ln);border-left:5px solid var(--st,var(--ln));border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.row .no{color:var(--mut);font-variant-numeric:tabular-nums}
+.nm b{display:block;font-weight:600;overflow-wrap:anywhere}.nm small{color:var(--mut)}
+.t{font-weight:600;font-variant-numeric:tabular-nums}
+.t.ok{color:var(--ok)}.t.wn{color:var(--wn)}.t.ms{color:var(--ms);font-weight:500}.t.md{color:var(--md)}
+.pill{display:inline-block;border-radius:6px;padding:1px 8px;margin:0 6px 4px 0;font-size:.85rem;font-weight:500}
+.pill.ok{background:var(--okb);color:var(--ok)}.pill.wn{background:var(--wnb);color:var(--wn)}.pill.ms{background:var(--msb);color:var(--ms)}.pill.md{background:var(--mdb);color:var(--md)}
+.sub{grid-column:2/-1;display:flex;align-items:center;gap:12px}
+.all{color:var(--mut);font-size:.82rem;font-variant-numeric:tabular-nums;flex:0 0 auto;max-width:42%}
+.strip{position:relative;height:16px;flex:1;background:var(--tl);border-radius:8px;overflow:hidden}
+.strip i{position:absolute;top:0;bottom:0;background:var(--zn)}
+.strip u{position:absolute;top:3px;width:10px;height:10px;margin-left:-5px;border-radius:50%;border:2px solid var(--sf);background:var(--xx)}
+.strip u.ok{background:var(--ok)}.strip u.wn{background:var(--wn)}.strip u.md{background:var(--md)}
+.empty{padding:28px;text-align:center;color:var(--mut)}
+@media(max-width:760px){
+ .hd{display:none}
+ .row{grid-template-columns:repeat(3,1fr)}
+ .row .no{display:none}
+ .nm,.st,.sub{grid-column:1/-1}
+ .t::before{content:attr(data-l);display:block;font-weight:400;font-size:.78rem;color:var(--mut)}
+ .sub{flex-wrap:wrap}.all{max-width:100%}.strip{flex:1 1 100%}
+}
+.nm .grp{margin-top:6px}
+.grp{display:flex;gap:6px;flex-wrap:wrap}
+.gb{border:1px solid var(--ln);background:transparent;color:var(--mut);border-radius:6px;padding:2px 9px;font-size:.82rem;font-weight:500;cursor:pointer}
+.gb:hover{border-color:var(--ink);color:var(--ink)}
+.gb[aria-pressed="true"]{background:var(--gc);border-color:var(--gc);color:var(--gt)}
+.tm{margin-bottom:12px;background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:10px 14px}
+.tm summary{cursor:pointer;font-weight:500}
+.tr{display:flex;gap:8px;align-items:center;margin-top:8px}
+.tr i{width:14px;height:14px;border-radius:4px;flex:none}
+.tr input{flex:1;min-width:0;border:1px solid var(--ln);background:var(--sf);border-radius:8px;padding:6px 10px}
+.wrapx{overflow-x:auto;margin-bottom:12px}
+.gsum{width:100%;border-collapse:collapse;background:var(--sf);border:1px solid var(--ln);font-size:.88rem}
+.gsum th,.gsum td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--ln);font-variant-numeric:tabular-nums;white-space:nowrap}
+.gsum th{color:var(--mut);font-weight:500}
+#pdfroot{position:fixed;left:-12000px;top:0}
+.up2{margin-top:14px;border:1px solid var(--ln);border-radius:12px;background:var(--sf);padding:14px 16px}
+.up2>b{display:block}.up2 .key{margin:2px 0 8px}
+.wg{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.82rem;color:var(--mut)}
+.wg input{width:96px;border:1px solid var(--ln);background:var(--sf);border-radius:6px;padding:2px 8px;font-variant-numeric:tabular-nums}
+.wp{margin-top:12px}
+.wp table{border-collapse:collapse;font-size:.88rem;margin:8px 0}
+.wp td,.wp th{padding:4px 12px 4px 0;border-bottom:1px solid var(--ln);text-align:left;font-variant-numeric:tabular-nums}
+.wp .ro{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.abs{margin-bottom:12px;background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:10px 14px}
+.abs summary{cursor:pointer;font-weight:500}
+.ar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--ln)}
+.ar small{color:var(--mut)}
+.pg{width:794px;height:1123px;background:#fff;color:#111;padding:48px 44px;font:400 13px/1.45 "IBM Plex Sans Thai",sans-serif;position:relative}
+.pg h3{margin:0 0 4px;font-size:21px}
+.pg .sm{display:flex;gap:10px;margin:12px 0 14px}
+.pg .sm div{flex:1;border:1px solid #cfd3cd;padding:7px 10px;border-radius:6px}
+.pg .sm b{display:block;font-size:19px}
+.pg table{width:100%;border-collapse:collapse}
+.pg th{text-align:left;border-bottom:2px solid #111;padding:6px 6px;font-weight:600}
+.pg td{border-bottom:1px solid #d9dcd7;padding:6px;vertical-align:top}
+.pg .c{color:#555;font-size:11px}
+.pg .ok{color:#1F7A4D}.pg .wn{color:#9A6700}.pg .ms{color:#B3261E}.pg .md{color:#2F55A4}
+.pg .ft{position:absolute;left:44px;right:44px;bottom:26px;display:flex;justify-content:space-between;color:#777;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <h1>ตรวจสอบรายสแกนหน้า</h1>
+ <p>อัปโหลด PDF รายงานข้อมูลการลงเวลาจากระบบ TMC HR ระบบจะสรุปให้ว่าใครสแกนครบ สาย ขาด หรือออกกลางคัน</p>
+</header>
+
+<label class="drop" id="drop" tabindex="-1">
+ <input type="file" id="file" accept="application/pdf,.pdf">
+ <b>เลือกไฟล์ PDF หรือลากมาวางที่นี่</b>
+ <span>ใช้ไฟล์ทุกหน้าของวันนั้น เพื่อให้นับจำนวนคนครบ</span>
+</label>
+<p id="msg" role="alert"></p>
+
+<ul class="rules">
+ <li><strong>เช้า</strong>สแกนก่อน 07:30 <em>หลังจากนั้นถือว่าสาย</em></li>
+ <li><strong>บ่าย</strong>สแกน 12:50–13:00 <em>ก่อนหรือหลังช่วงนี้ถือว่าเลท</em></li>
+ <li><strong>ออกงาน</strong>สแกนตั้งแต่ 17:30 เป็นต้นไป</li>
+ <li><strong>อื่นๆ</strong>สแกนเช้าแล้วออกก่อนบ่ายหรือเย็น <em>ติดป้ายออกกลางคัน</em></li>
+</ul>
+
+<div class="up2">
+ <b>ค่าแรง</b>
+ <p class="key">อัปโหลด PDF จากหน้า “ประมาณการค่าแรง” ของ TMC HR (พิมพ์ด้วย Save as PDF) แอพจะอ่านค่าแรงต่อคนแล้วจำไว้ตามรหัสพนักงาน หรือจะพิมพ์ค่าแรงเองในช่องใต้ชื่อแต่ละคนก็ได้</p>
+ <input type="file" id="wfile" accept="application/pdf,.pdf" aria-label="ไฟล์ประมาณการค่าแรง">
+ <p id="wmsg" role="alert" style="margin:8px 0 0"></p>
+ <div class="wp" id="wprev" hidden></div>
+</div>
+
+<section id="res">
+ <div class="meta">
+  <div><h2 id="site"></h2><p id="dt"></p></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+   <button class="btn" id="again">เลือกไฟล์ใหม่</button>
+   <button class="btn" id="xls">ส่งออก Excel</button>
+   <button class="btn pri" id="pdf">บันทึกเป็น PDF</button>
+  </div>
+ </div>
+ <div class="chips" id="chips"></div>
+ <div class="chips" id="gchips"></div>
+ <details class="tm" id="tm"><summary>จัดการประเภทคนงาน (เพิ่ม / เปลี่ยนชื่อ / ลบ)</summary>
+  <div id="tlist"></div>
+  <div class="tr"><input id="tnew" placeholder="ชื่อประเภทใหม่ เช่น ช่างปูน, แม่บ้าน" maxlength="30" aria-label="ชื่อประเภทใหม่"><button class="btn pri" id="tadd">+ เพิ่มประเภท</button></div>
+  <p class="key" style="margin:8px 0 0">แก้ชื่อในช่องได้เลย การลบประเภทจะทำให้คนในประเภทนั้นกลับเป็นยังไม่ระบุ</p>
+ </details>
+ <div class="wrapx" id="gsum"></div>
+ <details class="abs" id="abs" hidden><summary id="abss"></summary><div id="absl"></div></details>
+ <p class="key">กดปุ่มกลุ่มใต้ชื่อแต่ละคนเพื่อระบุว่าเป็นคนของใคร ระบบจะจำตามรหัสพนักงานไว้ใช้ในวันถัดไป กดซ้ำเพื่อยกเลิก</p>
+ <p class="key" id="gwarn" style="display:none;color:var(--wn)">เบราว์เซอร์นี้ไม่อนุญาตให้จดจำข้อมูล กลุ่มที่เลือกจะหายเมื่อปิดหน้านี้</p>
+ <p class="note" id="cnt"></p>
+ <div class="tools">
+  <input type="search" id="q" placeholder="ค้นหาชื่อหรือรหัส" aria-label="ค้นหาชื่อหรือรหัส">
+  <select id="srt" aria-label="เรียงลำดับ"><option value="t">เรียงตามเวลาที่สแกนแรก</option><option value="p">แสดงคนที่มีปัญหาก่อน</option><option value="g">เรียงตามกลุ่ม</option><option value="u">ยังไม่ระบุกลุ่มก่อน</option></select>
+  <button class="btn" id="gclr">ล้างกลุ่มที่จำไว้</button>
+ </div>
+ <p class="key">แถบเวลา 06:00–18:30 พื้นที่เขียวคือช่วงที่ถูกต้อง จุดคือการสแกน (เขียว ปกติ, เหลือง สาย/เลท, น้ำเงิน ออกกลางคัน, เทา สแกนอื่น)</p>
+ <div class="hd"><span>#</span><span>ชื่อ</span><span>เช้า</span><span>บ่าย</span><span>ออกงาน</span><span>สถานะ</span></div>
+ <div id="list"></div>
+</section>
+</div>
+<div id="pdfroot"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const T=(h,m=0,s=0)=>h*3600+m*60+s;
+const f=t=>String(Math.floor(t/3600)).padStart(2,'0')+':'+String(Math.floor(t%3600/60)).padStart(2,'0');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const ST={ok:'ปกติ',wn:'สาย/เลท',ms:'ไม่ครบ',md:'ออกกลางคัน'};
+const RANK={ms:0,md:1,wn:2,ok:3};
+let D=null,filt='all',gfilt='all',G={},canStore=true;
+const PAL=[['#F5B800','#1B211D'],['#6B4BB8','#fff'],['#0E7490','#fff'],['#B4532A','#fff'],['#4D7C0F','#fff'],['#A21CAF','#fff'],['#475569','#fff'],['#BE123C','#fff']];
+let TY=[{k:'st',l:'ST/AR',i:0},{k:'el',l:'ไฟฟ้า',i:1},{k:'sn',l:'สุขาภิบาล',i:2}],GR,GS,GN;
+try{const t=JSON.parse(localStorage.getItem('scan-types')||'null');if(Array.isArray(t)&&t.every(x=>x&&x.k&&x.l))TY=t}catch(e){}
+function syncT(){GR=TY.map(t=>[t.k,t.l]);GS=Object.fromEntries(GR);GN=GS}
+syncT();
+const gcol=k=>PAL[((TY.find(t=>t.k===k)||{}).i||0)%PAL.length];
+const tl=k=>(TY.find(t=>t.k===k)||{}).l||'-';
+let W={},R={};
+try{W=JSON.parse(localStorage.getItem('scan-wages')||'{}')||{};R=JSON.parse(localStorage.getItem('scan-roster')||'{}')||{}}catch(e){W={};R={}}
+const sk=s=>String(s||'').replace(/[^A-Za-z]/g,'').toLowerCase()||'site';
+const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
+const wsum=r=>{let s=0,m=0;r.forEach(p=>{W[p.id]?s+=W[p.id].w:m++});return fmt(s)+(m?' (ยังไม่มี '+m+' คน)':'')};
+try{G=JSON.parse(localStorage.getItem('scan-groups')||'{}')||{}}catch(e){G={};canStore=false}
+function saveG(){try{localStorage.setItem('scan-groups',JSON.stringify(G));localStorage.setItem('scan-types',JSON.stringify(TY));localStorage.setItem('scan-wages',JSON.stringify(W));localStorage.setItem('scan-roster',JSON.stringify(R));canStore=true}catch(e){canStore=false}$('gwarn').style.display=canStore?'none':'block'}
+/* worker โหลดเป็น script ธรรมดา (window.pdfjsWorker) และไม่ตั้ง workerSrc เพื่อไม่ให้สร้าง Worker ข้ามโดเมน */
+
+async function readLines(file){
+ const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+ const out=[];let N=0;
+ for(let p=1;p<=pdf.numPages;p++){
+  const tc=await(await pdf.getPage(p)).getTextContent();
+  const it=tc.items.filter(i=>i.str.trim()).map(i=>({x:i.transform[4],y:i.transform[5],s:i.str})).sort((a,b)=>b.y-a.y||a.x-b.x);
+  N+=it.length;let cur=[],y0=null;
+  const flush=()=>{if(cur.length)out.push(cur.sort((a,b)=>a.x-b.x).map(i=>i.s).join(' '));cur=[]};
+  it.forEach(i=>{if(y0!==null&&Math.abs(i.y-y0)>4){flush()}if(!cur.length)y0=i.y;cur.push(i)});
+  flush();
+ }
+ if(!N)throw new Error('NOTEXT');
+ return out;
+}
+function parse(lines){
+ const re=/(\d{1,4})\s+(\d{5,10})\s+(.+?)\s+(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/;
+ const people=new Map(),seen=new Set();let site='',cnt=null,date='';
+ lines.forEach(l=>{
+  const s=l.match(/หน่วยงาน\s*:\s*(.+)/);if(s&&!site)site=s[1].trim();
+  const c=l.replace(/\s+/g,'').match(/จำนวนผู้ลงเวลาเข้างาน(\d+)คน/);if(c)cnt=+c[1];
+  const ln=l.replace(/(\d)\s*-\s*(\d)/g,'$1-$2').replace(/(\d)\s*:\s*(\d)/g,'$1:$2');const m=ln.match(re);if(!m)return;
+  const k=m[2]+m[4]+m[5]+m[6]+m[7]+m[8]+(m[9]||'');
+  if(seen.has(k))return;seen.add(k);
+  const t=T(+m[7],+m[8],+(m[9]||0));date=date||m[4]+'-'+m[5]+'-'+m[6];
+  const p=people.get(m[2])||{id:m[2],name:m[3].trim(),t:[]};p.t.push(t);people.set(m[2],p);
+ });
+ return{site:site||findSite(lines),cnt,date,people:[...people.values()]};
+}
+function analyse(p){
+ const all=[...p.t].sort((a,b)=>a-b),cl=[];
+ all.forEach(t=>{if(!cl.length||t-cl[cl.length-1]>180)cl.push(t)});
+ const am=cl.filter(t=>t<T(11,30)),pz=cl.filter(t=>t>=T(11,30)&&t<T(16)),ou=cl.filter(t=>t>=T(16));
+ const mIn=am[0],pIn=pz.length?(pz.find(t=>t>=T(12,50)&&t<=T(13,0,59))??pz[0]):undefined,oT=ou[ou.length-1];
+ let ex;
+ if(!ou.length){
+  const xp=pz.filter(t=>t!==pIn&&t-pIn>1800);
+  if(xp.length)ex=xp[xp.length-1];
+  else if(!pz.length&&am.length>1&&am[am.length-1]-am[0]>1800)ex=am[am.length-1];
+ }
+ const fl=[];
+ if(mIn===undefined)fl.push(['ms','ไม่มีสแกนเช้า']);else if(mIn>T(7,30))fl.push(['wn','สายเช้า '+f(mIn)]);
+ if(ex!==undefined)fl.push(['md','ออกกลางคัน '+f(ex)+' (อาจป่วยหรือมีธุระ)']);
+ else{
+  if(pIn===undefined)fl.push(['ms','ไม่มีสแกนบ่าย']);
+  else if(pIn<T(12,50))fl.push(['wn','สแกนบ่ายเลท '+f(pIn)+' (ก่อนเวลา)']);
+  else if(pIn>T(13,0,59))fl.push(['wn','สแกนบ่ายเลท '+f(pIn)+' (หลังเวลา)']);
+  if(oT===undefined)fl.push(['ms','ไม่มีสแกนออกงาน']);else if(oT<T(17,30))fl.push(['wn','ออกก่อน 17:30 ('+f(oT)+')']);
+ }
+ let st=ex!==undefined?'md':fl.some(x=>x[0]==='ms')?'ms':fl.length?'wn':'ok';
+ if(st==='ok')fl.push(['ok','ครบ 3 ช่วง']);
+ const dots=cl.map(t=>{
+  let c='xx';
+  if(t===mIn)c=t>T(7,30)?'wn':'ok';
+  else if(t===pIn)c=(t>=T(12,50)&&t<=T(13,0,59))?'ok':'wn';
+  else if(t===oT)c=t>=T(17,30)?'ok':'wn';
+  if(t===ex)c='md';
+  return{t,c};
+ });
+ const cell=(t,c)=>t===undefined?{v:'—',c:'ms'}:{v:f(t),c};
+ const cm=cell(mIn,mIn>T(7,30)?'wn':'ok'),
+  cp=ex!==undefined&&pIn===undefined?{v:'—',c:'md'}:cell(pIn,pIn!==undefined&&pIn>=T(12,50)&&pIn<=T(13,0,59)?'ok':'wn'),
+  co=ex!==undefined?{v:f(ex),c:'md'}:cell(oT,oT>=T(17,30)?'ok':'wn');
+ return{...p,all,cl,fl,st,dots,cm,cp,co,first:all[0]};
+}
+const pos=t=>Math.max(0,Math.min(100,(t-T(6))/(T(18,30)-T(6))*100));
+function zones(){
+ const z=(a,b)=>`<i style="left:${pos(a)}%;width:${Math.max(pos(b)-pos(a),.8)}%"></i>`;
+ return z(T(6),T(7,30))+z(T(12,50),T(13,1))+z(T(17,30),T(18,30));
+}
+function rowHtml(p,i){
+ const col={ok:'var(--ok)',wn:'var(--wn)',ms:'var(--ms)',md:'var(--md)'}[p.st];
+ return `<div class="row" style="--st:${col}"><span class="no">${i+1}</span>
+ <div class="nm"><b>${esc(p.name)}</b><small>รหัส ${esc(p.id)}</small>
+ <div class="grp" role="group" aria-label="กลุ่มงานของ ${esc(p.name)}">${GR.map(g=>`<button class="gb" style="--gc:${gcol(g[0])[0]};--gt:${gcol(g[0])[1]}" data-id="${esc(p.id)}" data-g="${g[0]}" aria-pressed="${G[p.id]===g[0]}">${g[1]}</button>`).join('')}</div>
+ <label class="wg">ค่าแรง/วัน <input type="number" min="0" step="1" inputmode="decimal" data-w="${esc(p.id)}" value="${W[p.id]?W[p.id].w:''}" placeholder="ใส่ค่าแรง"></label></div>
+ <div class="t ${p.cm.c}" data-l="เช้า">${p.cm.v}</div><div class="t ${p.cp.c}" data-l="บ่าย">${p.cp.v}</div><div class="t ${p.co.c}" data-l="ออกงาน">${p.co.v}</div>
+ <div class="st">${p.fl.map(x=>`<span class="pill ${x[0]}">${esc(x[1])}</span>`).join('')}</div>
+ <div class="sub"><div class="strip" aria-hidden="true">${zones()}${p.dots.map(d=>`<u class="${d.c}" style="left:${pos(d.t)}%"></u>`).join('')}</div>
+ <span class="all">สแกน ${p.all.length} ครั้ง: ${p.all.map(f).join(', ')}</span></div></div>`;
+}
+function view(){
+ const q=$('q').value.trim().toLowerCase();
+ let r=D.rows.filter(p=>(filt==='all'||p.st===filt)&&(gfilt==='all'||(G[p.id]||'none')===gfilt)&&(!q||p.name.toLowerCase().includes(q)||p.id.includes(q)));
+ const sv=$('srt').value,gi=p=>{const k=GR.findIndex(x=>x[0]===G[p.id]);return k<0?9:k};
+ r=[...r].sort(sv==='p'?(a,b)=>RANK[a.st]-RANK[b.st]||a.first-b.first:sv==='g'?(a,b)=>gi(a)-gi(b)||a.first-b.first:sv==='u'?(a,b)=>(G[a.id]?1:0)-(G[b.id]?1:0)||a.first-b.first:(a,b)=>a.first-b.first);
+ return r;
+}
+function render(){absRender();
+ const r=view();
+ $('list').innerHTML=r.length?r.map(rowHtml).join(''):'<div class="empty">ไม่พบรายชื่อตามเงื่อนไขนี้</div>';
+}
+function gchips(){
+ const cnt=k=>D.rows.filter(p=>(G[p.id]||'none')===k).length;
+ const it=[['all','ทุกกลุ่ม',D.rows.length],...GR.map(g=>[g[0],g[1],cnt(g[0])]),['none','ยังไม่ระบุ',cnt('none')]];
+ $('gchips').innerHTML=it.map(x=>`<button class="chip" data-gk="${x[0]}" aria-pressed="${gfilt===x[0]}">${x[1]}<b>${x[2]}</b></button>`).join('');
+ const rows=[...GR.map(g=>[GN[g[0]],g[0]]),['ยังไม่ระบุกลุ่ม','none']];
+ $('gsum').innerHTML='<table class="gsum"><thead><tr><th>กลุ่มงาน</th><th>ทั้งหมด</th><th>ปกติ</th><th>สาย/เลท</th><th>ไม่ครบ</th><th>ออกกลางคัน</th><th>ค่าแรง/วัน รวม</th></tr></thead><tbody>'+rows.map(([l,k])=>{const r=D.rows.filter(p=>(G[p.id]||'none')===k),c=s=>r.filter(p=>p.st===s).length;return `<tr><td>${l}</td><td>${r.length}</td><td>${c('ok')}</td><td>${c('wn')}</td><td>${c('ms')}</td><td>${c('md')}</td><td>${wsum(r)}</td></tr>`}).join('')+'</tbody></table>';
+}
+function chips(){gchips();
+ const n=k=>D.rows.filter(p=>p.st===k).length;
+ const items=[['all','ทั้งหมด',D.rows.length],...Object.keys(ST).map(k=>[k,ST[k],n(k)])];
+ $('chips').innerHTML=items.map(x=>`<button class="chip" data-k="${x[0]}" aria-pressed="${filt===x[0]}">${x[1]}<b>${x[2]}</b></button>`).join('');
+}
+function thDate(d){const [a,b,c]=d.split('-');return (+a)+' '+MON[+b-1]+' '+(+c+543)}
+function show(parsed){
+ const rows=parsed.people.map(analyse);
+ const rk=sk(parsed.site);
+ if(rk){R[rk]=R[rk]||{};parsed.people.forEach(p=>{R[rk][p.id]={n:p.name,l:parsed.date}});saveG()}
+ D={...parsed,rows};filt='all';gfilt='all';$('gwarn').style.display=canStore?'none':'block';
+ $('site').textContent=parsed.site||'ไม่ระบุหน่วยงาน';
+ $('dt').textContent='ข้อมูลการลงเวลาวันที่ '+thDate(parsed.date);
+ const same=parsed.cnt===rows.length,c=$('cnt');
+ c.className='note'+(same||parsed.cnt==null?'':' bad');
+ c.textContent=parsed.cnt==null?`พบผู้สแกน ${rows.length} คน`:same?`พบผู้สแกน ${rows.length} คน ตรงกับที่หัวรายงานระบุ`:`หัวรายงานระบุ ${parsed.cnt} คน แต่อ่านได้ ${rows.length} คน ตรวจดูว่าอัปโหลดไฟล์ครบทุกหน้าหรือยัง`;
+ chips();render();$('res').style.display='block';$('res').scrollIntoView({behavior:'smooth'});
+}
+async function handle(file){
+ const m=$('msg');m.textContent='';
+ if(!file)return;
+ if(!/pdf$/i.test(file.name)&&file.type!=='application/pdf'){m.textContent='ไฟล์นี้ไม่ใช่ PDF กรุณาเลือกไฟล์รายงานการลงเวลา';return}
+ try{
+  m.style.color='var(--mut)';m.textContent='กำลังอ่านไฟล์…';
+  const lines=await readLines(file);const parsed=parse(lines);
+  m.style.color='';
+  if(!parsed.people.length&&lines.some(l=>/ประมาณการค่าแรง/.test(l.replace(/\s/g,'')))){m.textContent='ไฟล์นี้คือรายงานประมาณการค่าแรง ให้อัปโหลดในช่อง “ค่าแรง” ด้านล่างแทน';return}
+  if(!parsed.people.length){m.textContent='อ่านรายการสแกนไม่พบ ตรวจว่าเป็น PDF จากหน้าข้อมูลการลงเวลาของ TMC HR และไม่ใช่ไฟล์สแกนเป็นรูปภาพ [ข้อความที่อ่านได้: '+lines.filter(x=>/\d/.test(x)).slice(0,4).join(' | ').slice(0,300)+']';return}
+  m.textContent='';show(parsed);
+ }catch(e){m.style.color='';m.textContent=(e&&e.message==='NOTEXT')?'PDF นี้ไม่มีตัวอักษรให้อ่าน (เกิดจากการพิมพ์ด้วย Microsoft Print to PDF ซึ่งแปลงตัวอักษรเป็นรูป) ให้พิมพ์ใหม่ด้วย Chrome: กด Ctrl+P แล้วเลือกปลายทางเป็น “บันทึกเป็น PDF” (Save as PDF) จากนั้นอัปโหลดไฟล์ใหม่':'เปิดไฟล์ไม่สำเร็จ: '+(e&&e.message||e)}
+}
+$('file').addEventListener('change',e=>handle(e.target.files[0]));
+const dz=$('drop');
+['dragenter','dragover'].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();dz.classList.add('on')}));
+['dragleave','drop'].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();dz.classList.remove('on')}));
+dz.addEventListener('drop',e=>handle(e.dataTransfer.files[0]));
+$('again').onclick=()=>{$('res').style.display='none';$('file').value='';window.scrollTo({top:0,behavior:'smooth'})};
+$('chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;filt=b.dataset.k;chips();render()});
+$('q').addEventListener('input',render);$('srt').addEventListener('change',render);
+$('gchips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;gfilt=b.dataset.gk;chips();render()});
+$('list').addEventListener('click',e=>{
+ const b=e.target.closest('.gb');if(!b)return;
+ const id=b.dataset.id,g=b.dataset.g;
+ if(G[id]===g)delete G[id];else G[id]=g;
+ saveG();gchips();render();
+ const nb=document.querySelector('.gb[data-id="'+id+'"][data-g="'+g+'"]');if(nb)nb.focus();
+});
+let clr=0;
+$('gclr').onclick=function(){
+ if(!clr){this.textContent='กดอีกครั้งเพื่อยืนยันการล้าง';clr=setTimeout(()=>{clr=0;this.textContent='ล้างกลุ่มที่จำไว้'},4000);return}
+ clearTimeout(clr);clr=0;this.textContent='ล้างกลุ่มที่จำไว้';G={};saveG();if(D){chips();render()}
+};
+
+/* ---------- จัดการประเภทคนงาน ---------- */
+const applyT=()=>{syncT();saveG();tmRender();if(D){chips();render()}};
+function tmRender(){
+ $('tlist').innerHTML=TY.map(t=>{const c=PAL[t.i%PAL.length];return `<div class="tr"><i style="background:${c[0]}"></i><input value="${esc(t.l)}" data-k="${esc(t.k)}" maxlength="30" aria-label="ชื่อประเภท"><button class="btn" data-del="${esc(t.k)}">ลบ</button></div>`}).join('')||'<p class="key">ยังไม่มีประเภท</p>';
+}
+$('tlist').addEventListener('change',e=>{
+ const k=e.target.dataset.k;if(!k)return;
+ const v=e.target.value.trim(),t=TY.find(x=>x.k===k);
+ if(!v||!t){tmRender();return}
+ t.l=v;applyT();
+});
+$('tlist').addEventListener('click',e=>{
+ const b=e.target.closest('[data-del]');if(!b)return;
+ if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='ยืนยันลบ';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='ลบ'}},4000);return}
+ const k=b.dataset.del;
+ TY=TY.filter(t=>t.k!==k);
+ Object.keys(G).forEach(id=>{if(G[id]===k)delete G[id]});
+ if(gfilt===k)gfilt='all';
+ applyT();
+});
+function addT(){
+ const inp=$('tnew'),v=inp.value.trim();if(!v)return;
+ if(TY.some(t=>t.l.toLowerCase()===v.toLowerCase())){inp.value='';inp.placeholder='มีประเภทนี้อยู่แล้ว';return}
+ const used=TY.map(t=>t.i),i=[...PAL.keys()].find(n=>!used.includes(n));
+ TY.push({k:'t'+Date.now().toString(36),l:v,i:i===undefined?TY.length:i});
+ inp.value='';applyT();
+}
+$('tadd').onclick=addT;
+$('tnew').addEventListener('keydown',e=>{if(e.key==='Enter')addT()});
+tmRender();
+
+/* ---------- Export Excel ---------- */
+async function saveFile(blob,name){
+ const dl=window.claude&&claude.use?await claude.use('downloads'):null;
+ if(dl){await dl.save({filename:name,data:blob})}
+ else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()}
+}
+async function exportXls(){
+ const rows=view();if(!rows.length)return;
+ const b=$('xls'),old=b.textContent;b.disabled=true;b.textContent='กำลังสร้าง Excel…';
+ try{
+  const ty=p=>G[p.id]?tl(G[p.id]):'ยังไม่ระบุ';
+  const head=['ลำดับ','รหัส','ชื่อ','ประเภท','ค่าแรง/วัน','เช้า','บ่าย','ออกงาน','สถานะ','หมายเหตุ','สแกนกี่ครั้ง','เวลาที่สแกนทั้งหมด'];
+  const s1=XLSX.utils.aoa_to_sheet([['ข้อมูลการลงเวลา'],['หน่วยงาน',D.site],['วันที่',D.date],[],head,...rows.map((p,i)=>[i+1,p.id,p.name,ty(p),W[p.id]?W[p.id].w:'',p.cm.v,p.cp.v,p.co.v,ST[p.st],p.fl.filter(x=>x[0]!=='ok').map(x=>x[1]).join(' / '),p.all.length,p.all.map(f).join(', ')])]);
+  s1['!cols']=[{wch:7},{wch:11},{wch:26},{wch:16},{wch:12},{wch:8},{wch:8},{wch:9},{wch:12},{wch:44},{wch:12},{wch:34}];
+  const grp=[...TY.map(t=>[t.l,t.k]),['ยังไม่ระบุ','none']];
+  const s2=XLSX.utils.aoa_to_sheet([['ประเภท','ทั้งหมด','ปกติ','สาย/เลท','ไม่ครบ','ออกกลางคัน','ค่าแรง/วัน รวม','คนที่ยังไม่มีค่าแรง'],...grp.map(([l,k])=>{const r=D.rows.filter(p=>(G[p.id]||'none')===k),c=s=>r.filter(p=>p.st===s).length;return[l,r.length,c('ok'),c('wn'),c('ms'),c('md'),r.reduce((s,p)=>s+(W[p.id]?W[p.id].w:0),0),r.filter(p=>!W[p.id]).length]})]);
+  s2['!cols']=[{wch:20},{wch:10},{wch:8},{wch:10},{wch:10},{wch:14},{wch:16},{wch:18}];
+  const s3=XLSX.utils.aoa_to_sheet([['รหัส','ชื่อ','ประเภท','วันที่','เวลา'],...rows.flatMap(p=>p.all.map(t=>[p.id,p.name,ty(p),D.date,f(t)]))]);
+  s3['!cols']=[{wch:11},{wch:26},{wch:16},{wch:12},{wch:8}];
+  const ab=absList(),s4=XLSX.utils.aoa_to_sheet([['รหัส','ชื่อ','ประเภท','ค่าแรง/วัน','เห็นล่าสุด'],...ab.map(a=>[a.id,a.name,G[a.id]?tl(G[a.id]):'ยังไม่ระบุ',W[a.id]?W[a.id].w:'',a.last])]);
+  s4['!cols']=[{wch:11},{wch:26},{wch:16},{wch:12},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,s1,'รายคน');XLSX.utils.book_append_sheet(wb,s2,'สรุปตามประเภท');XLSX.utils.book_append_sheet(wb,s3,'รายการสแกนดิบ');XLSX.utils.book_append_sheet(wb,s4,'ไม่พบสแกน');
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  await saveFile(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'attendance-'+D.date+(gfilt!=='all'?'-'+gfilt:'')+'.xlsx');
+ }catch(e){if(!(e&&e.code==='declined'))$('msg').textContent='สร้าง Excel ไม่สำเร็จ: '+(e&&e.message||e)}
+ b.disabled=false;b.textContent=old;
+}
+$('xls').onclick=exportXls;
+
+/* ---------- PDF export ---------- */
+function pageHtml(rows,start,n,pages,first){
+ const cnt=k=>D.rows.filter(p=>p.st===k).length;
+ const head=first?`<h3>ข้อมูลการลงเวลา</h3><div><b>หน่วยงาน :</b> ${esc(D.site)}</div><div>วันที่ ${esc(thDate(D.date))} (${esc(D.date)}) &nbsp; จำนวนผู้ลงเวลาเข้างาน ${D.rows.length} คน</div>
+ <div class="sm"><div class="ok"><b>${cnt('ok')}</b>ปกติ</div><div class="wn"><b>${cnt('wn')}</b>สาย/เลท</div><div class="ms"><b>${cnt('ms')}</b>ไม่ครบ</div><div class="md"><b>${cnt('md')}</b>ออกกลางคัน</div></div>
+ <div class="c" style="margin:-6px 0 12px">กลุ่มงาน: ${GR.map(g=>g[1]+' '+D.rows.filter(p=>G[p.id]===g[0]).length).join(' · ')} · ยังไม่ระบุ ${D.rows.filter(p=>!G[p.id]).length}<br>แสดงในรายงานนี้: ${gfilt==='all'?'ทุกกลุ่ม':gfilt==='none'?'ยังไม่ระบุกลุ่ม':GN[gfilt]} / ${filt==='all'?'ทุกสถานะ':ST[filt]}</div>`
+ :`<div style="font-weight:600;margin-bottom:10px">ข้อมูลการลงเวลา (ต่อ) ${esc(D.site)} ${esc(D.date)}</div>`;
+ const tr=rows.map((p,i)=>`<tr><td>${start+i+1}</td><td>${esc(p.id)}</td><td>${esc(p.name)}<div class="c">สแกน: ${p.all.map(f).join(', ')}</div></td><td>${G[p.id]?esc(GS[G[p.id]]):'-'}</td>
+ <td class="${p.cm.c}">${p.cm.v}</td><td class="${p.cp.c}">${p.cp.v}</td><td class="${p.co.c}">${p.co.v}</td>
+ <td>${p.fl.map(x=>`<div class="${x[0]}">${esc(x[1])}</div>`).join('')}</td></tr>`).join('');
+ return `<div class="pg">${head}<table><thead><tr><th>ลำดับ</th><th>รหัส</th><th>ชื่อ</th><th>กลุ่ม</th><th>เช้า</th><th>บ่าย</th><th>ออกงาน</th><th>สถานะ</th></tr></thead><tbody>${tr}</tbody></table>
+ <div class="ft"><span>เกณฑ์: เช้าก่อน 07:30 · บ่าย 12:50–13:00 · ออกงาน 17:30 เป็นต้นไป</span><span>หน้า ${pages[0]}/${pages[1]}</span></div></div>`;
+}
+async function exportPdf(){
+ const b=$('pdf'),rows=view();
+ if(!rows.length){return}
+ b.disabled=true;const old=b.textContent;b.textContent='กำลังสร้าง PDF…';
+ try{
+  const chunks=[];let i=0;
+  while(i<rows.length){const n=chunks.length?17:12;chunks.push([i,rows.slice(i,i+n)]);i+=n}
+  const root=$('pdfroot'),ab=absList(),abp=[];for(let j=0;j<ab.length;j+=24)abp.push(ab.slice(j,j+24));const TP=chunks.length+abp.length;
+  const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});
+  await document.fonts.ready;
+  for(let k=0;k<chunks.length;k++){
+   root.innerHTML=pageHtml(chunks[k][1],chunks[k][0],0,[k+1,TP],k===0);
+   const cv=await html2canvas(root.firstElementChild,{scale:2,backgroundColor:'#ffffff'});
+   if(k)doc.addPage();
+   doc.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',0,0,210,297);
+  }
+  for(let a=0;a<abp.length;a++){
+    root.innerHTML=absPage(abp[a],a*24,[chunks.length+a+1,TP]);
+    const cv2=await html2canvas(root.firstElementChild,{scale:2,backgroundColor:'#ffffff'});
+    doc.addPage();doc.addImage(cv2.toDataURL('image/jpeg',.92),'JPEG',0,0,210,297);
+   }
+   root.innerHTML='';
+  const blob=doc.output('blob'),name='attendance-'+D.date+(gfilt!=='all'?'-'+gfilt:'')+'.pdf';
+  const dl=window.claude&&claude.use?await claude.use('downloads'):null;
+  if(dl){await dl.save({filename:name,data:blob})}
+  else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()}
+ }catch(e){
+  if(!(e&&e.code==='declined'))$('msg').textContent='สร้าง PDF ไม่สำเร็จ: '+(e&&e.message||e);
+ }
+ b.disabled=false;b.textContent=old;
+}
+$('pdf').onclick=exportPdf;
+
+/* ---------- ไม่พบการสแกน (จากรายชื่อที่จำไว้) ---------- */
+function absList(){
+ const r=R[sk(D.site)]||{},here=new Set(D.rows.map(p=>p.id));
+ return Object.keys(r).filter(id=>!here.has(id)&&(gfilt==='all'||(G[id]||'none')===gfilt)).map(id=>({id,name:r[id].n,last:r[id].l})).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+}
+function absRender(){
+ const el=$('abs');if(!D){return}
+ const has=Object.keys(R[sk(D.site)]||{}).length>0;el.hidden=!has;if(!has)return;
+ const a=absList();
+ $('abss').textContent='ไม่พบการสแกนวันนี้ '+a.length+' คน (จากรายชื่อที่แอพจำไว้)';
+ $('absl').innerHTML=a.length?a.map(x=>`<div class="ar"><span><b>${esc(x.name)}</b> <small>รหัส ${esc(x.id)} · ${G[x.id]?esc(tl(G[x.id])):'ยังไม่ระบุกลุ่ม'}${W[x.id]?' · ค่าแรง '+fmt(W[x.id].w):''} · เห็นล่าสุด ${esc(x.last)}</small></span><button class="btn" data-rm="${esc(x.id)}">เอาออกจากรายชื่อ</button></div>`).join(''):'<p class="key" style="margin:8px 0 0">ทุกคนในรายชื่อที่จำไว้มีการสแกนแล้ว</p>';
+}
+$('abs').addEventListener('click',e=>{
+ const b=e.target.closest('[data-rm]');if(!b)return;
+ if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='ยืนยันลบ';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='เอาออกจากรายชื่อ'}},4000);return}
+ const k=sk(D.site);if(R[k])delete R[k][b.dataset.rm];saveG();render();
+});
+function absPage(list,start,pages){
+ const gl=gfilt==='all'?'ทุกกลุ่ม':gfilt==='none'?'ยังไม่ระบุกลุ่ม':GN[gfilt];
+ return `<div class="pg"><h3>ไม่พบการสแกนวันนี้</h3><div>${esc(D.site)} · วันที่ ${esc(thDate(D.date))}</div>
+ <div class="c" style="margin:6px 0 12px">รายชื่อที่แอพจำไว้ แต่ไม่มีรายการสแกนในไฟล์ของวันนี้ (${esc(gl)})</div>
+ <table><thead><tr><th>ลำดับ</th><th>รหัส</th><th>ชื่อ</th><th>กลุ่ม</th><th>เห็นล่าสุด</th></tr></thead><tbody>${list.map((a,i)=>`<tr><td>${start+i+1}</td><td>${esc(a.id)}</td><td>${esc(a.name)}</td><td>${G[a.id]?esc(tl(G[a.id])):'-'}</td><td>${esc(a.last)}</td></tr>`).join('')}</tbody></table>
+ <div class="ft"><span></span><span>หน้า ${pages[0]}/${pages[1]}</span></div></div>`;
+}
+
+function findSite(lines){return (lines.find(l=>/[A-Za-z]{3,}.*\(.*\)/.test(l)&&!/\.php|index|attendance/i.test(l))||'').replace(/\s+/g,' ').trim()}
+
+/* ---------- ค่าแรง ---------- */
+$('list').addEventListener('change',e=>{
+ const id=e.target.dataset&&e.target.dataset.w;if(!id)return;
+ const v=e.target.value.trim();
+ if(v===''){delete W[id]}else{const n=+v;if(!isFinite(n)||n<0){e.target.value=W[id]?W[id].w:'';return}W[id]={w:n,at:D?D.date:''}}
+ saveG();gchips();
+});
+const CATS=[['ก่อสร้าง',/ก่อส/],['ไฟฟ้า',/ไฟ/],['ประปา',/ประปา|สุขา/],['ส่วนกลาง',/ส่วนกลาง/]];
+function parseWage(lines){
+ let cat='',site='',from='',to='';const rows=[];
+ lines.forEach(l=>{
+  const nl=l.replace(/(\d)\s*-\s*(\d)/g,'$1-$2');
+  const s=l.match(/หน่วยงาน[^:]*:\s*(.+)/);if(s&&!site)site=s[1].trim();
+  const ds=nl.match(/\d{2}-\d{2}-\d{4}/g);if(ds&&ds.length>=2&&!to){from=ds[0];to=ds[1]}
+  const t=l.replace(/\s+/g,'');
+  if(/^ช่าง/.test(t)&&!/\d/.test(t)){const m=CATS.filter(c=>c[1].test(t));if(m.length===1)cat=m[0][0]}
+  const r=l.match(/^(\d{1,3})\s+(\d{6,8})\s+(.+?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s*$/);
+  if(r&&cat)rows.push({id:r[2],name:r[3].replace(/^(นางสาว|นาย|นาง)\s*/,'').trim(),cat,w:parseFloat(r[4].replace(/,/g,''))});
+ });
+ const seen=new Set();
+ return{site:site||findSite(lines),from,to,rows:rows.filter(r=>!seen.has(r.id)&&seen.add(r.id))};
+}
+let WP=null;
+async function handleWage(file){
+ const m=$('wmsg');m.textContent='';m.style.color='';$('wprev').hidden=true;
+ if(!file)return;
+ try{
+  m.style.color='var(--mut)';m.textContent='กำลังอ่านไฟล์ค่าแรง…';
+  const p=parseWage(await readLines(file));m.style.color='';
+  if(!p.rows.length){m.textContent='อ่านรายการค่าแรงไม่พบ ตรวจว่าเป็น PDF จากหน้า “ประมาณการค่าแรง” ของ TMC HR (ไม่ใช่หน้าข้อมูลการลงเวลา)';return}
+  m.textContent='';WP=p;wpReview();
+ }catch(e){m.style.color='';m.textContent=(e&&e.message==='NOTEXT')?'PDF ค่าแรงนี้ไม่มีตัวอักษรให้อ่าน ให้พิมพ์ใหม่ด้วย Chrome (Ctrl+P แล้วเลือกปลายทาง “บันทึกเป็น PDF”)':'เปิดไฟล์ไม่สำเร็จ: '+(e&&e.message||e)}
+}
+function wpReview(){
+ const rows=WP.rows,nw=rows.filter(r=>!W[r.id]),sm=rows.filter(r=>W[r.id]&&W[r.id].w===r.w),ch=rows.filter(r=>W[r.id]&&W[r.id].w!==r.w);
+ const per=WP.to?' (ข้อมูลวันที่ '+esc(WP.from===WP.to?WP.to:WP.from+' ถึง '+WP.to)+')':'';
+ $('wprev').innerHTML=`<b>พบ ${rows.length} คน${per}</b>
+ <div class="key" style="margin:4px 0">คนใหม่ ${nw.length} · ค่าแรงตรงกับที่จำไว้ ${sm.length} · ค่าแรงต่างจากที่จำไว้ ${ch.length}</div>
+ ${ch.length?`<table><thead><tr><th>ชื่อ</th><th>รหัส</th><th>ที่จำไว้</th><th>ในไฟล์นี้</th></tr></thead><tbody>${ch.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.id)}</td><td>${fmt(W[r.id].w)}</td><td>${fmt(r.w)}</td></tr>`).join('')}</tbody></table><div class="key">ถ้าเป็นรอบปรับค่าแรง ให้เลือก “เพิ่มคนใหม่ และอัปเดตค่าที่เปลี่ยน” แต่ถ้าวันนั้นมีคนทำงานไม่ครบวัน ค่าในไฟล์อาจต่ำกว่าอัตราปกติ ให้เลือกเพิ่มเฉพาะคนใหม่</div>`:''}
+ <label class="wg" style="display:flex"><input type="checkbox" id="wtyp" checked style="width:auto"> ตั้งประเภทคนงานตามหัวข้อในไฟล์ (ก่อสร้าง = ST/AR, ไฟฟ้า, ประปา = สุขาภิบาล, ส่วนกลาง) เฉพาะคนที่ยังไม่ระบุประเภท</label>
+ <div class="ro"><button class="btn pri" id="wok1">เพิ่มเฉพาะคนใหม่${nw.length?' ('+nw.length+')':''}</button>${ch.length?`<button class="btn" id="wok2">เพิ่มคนใหม่ และอัปเดตค่าที่เปลี่ยน (${ch.length})</button>`:''}<button class="btn" id="wno">ยกเลิก</button></div>`;
+ $('wprev').hidden=false;
+}
+function catKey(cat){
+ const dk={'ก่อสร้าง':'st','ไฟฟ้า':'el','ประปา':'sn'}[cat];
+ if(dk)return TY.some(t=>t.k===dk)?dk:null;
+ let t=TY.find(x=>x.l==='ส่วนกลาง');
+ if(!t){const used=TY.map(x=>x.i),i=[...PAL.keys()].find(n=>!used.includes(n));t={k:'t'+Date.now().toString(36),l:'ส่วนกลาง',i:i===undefined?TY.length:i};TY.push(t);syncT();tmRender()}
+ return t.k;
+}
+function wapply(upd){
+ let a=0,u=0,t=0;const key=sk(WP.site),at=WP.to||'';
+ const typ=$('wtyp')&&$('wtyp').checked;
+ WP.rows.forEach(r=>{
+  const o=W[r.id];
+  if(!o){W[r.id]={w:r.w,at};a++}else if(upd&&o.w!==r.w){W[r.id]={w:r.w,at};u++}
+  if(key){R[key]=R[key]||{};if(!R[key][r.id])R[key][r.id]={n:r.name,l:at||'-'}}
+  if(typ&&!G[r.id]){const k=catKey(r.cat);if(k){G[r.id]=k;t++}}
+ });
+ saveG();$('wprev').hidden=true;
+ const m=$('wmsg');m.style.color='var(--ok)';
+ m.textContent='บันทึกแล้ว: เพิ่มค่าแรงคนใหม่ '+a+' คน'+(u?' · อัปเดต '+u+' คน':'')+(t?' · ตั้งประเภทให้ '+t+' คน':'');
+ WP=null;if(D){chips();render()}
+}
+$('wfile').addEventListener('change',e=>{const f=e.target.files[0];handleWage(f);e.target.value=''});
+$('wprev').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.id==='wok1')wapply(false);else if(b.id==='wok2')wapply(true);else if(b.id==='wno'){$('wprev').hidden=true;WP=null}
+});
+</script>
+</body>
+</html>
