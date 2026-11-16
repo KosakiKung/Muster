@@ -98,6 +98,20 @@ button,select,input{font:inherit;color:inherit}
 .abs summary{cursor:pointer;font-weight:500}
 .ar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--ln)}
 .ar small{color:var(--mut)}
+#hist h2{font-size:1.2rem;margin:30px 0 8px}
+#hist h3{font-size:1.05rem;margin:18px 0 4px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:8px 0 14px}
+.cal .h{font-size:.78rem;color:var(--mut);text-align:center;padding:2px 0}
+.cal .c{min-height:62px;border:1px solid var(--ln);border-radius:8px;background:var(--sf);padding:4px 5px;font:inherit;font-size:.78rem;line-height:1.25;text-align:left;color:inherit;min-width:0}
+.cal button.c{cursor:pointer}.cal button.c:hover{border-color:var(--ink)}
+.cal .c b{display:block;font-size:.85rem;font-weight:600}
+.cal .c.x{background:transparent;border-style:dashed;color:var(--mut)}
+.cal .c.s-ok{border-left:4px solid var(--ok)}.cal .c.s-wn{border-left:4px solid var(--wn)}.cal .c.s-ms{border-left:4px solid var(--ms)}.cal .c.s-md{border-left:4px solid var(--md)}
+.lnk{background:none;border:0;padding:0;color:var(--md);font-weight:600;text-align:left;cursor:pointer;text-decoration:underline}
+.ht{width:100%;border-collapse:collapse;background:var(--sf);border:1px solid var(--ln);font-size:.86rem}
+.ht th,.ht td{padding:6px 10px;border-bottom:1px solid var(--ln);text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap;vertical-align:top}
+.ht th{color:var(--mut);font-weight:500}.ht tfoot td{font-weight:600}
+@media(max-width:600px){.cal{gap:3px}.cal .c{min-height:52px;padding:3px;font-size:.68rem}.cal .c b{font-size:.78rem}}
 .pg{width:794px;height:1123px;background:#fff;color:#111;padding:48px 44px;font:400 13px/1.45 "IBM Plex Sans Thai",sans-serif;position:relative}
 .pg h3{margin:0 0 4px;font-size:21px}
 .pg .sm{display:flex;gap:10px;margin:12px 0 14px}
@@ -170,6 +184,25 @@ button,select,input{font:inherit;color:inherit}
  <div class="hd"><span>#</span><span>ชื่อ</span><span>เช้า</span><span>บ่าย</span><span>ออกงาน</span><span>สถานะ</span></div>
  <div id="list"></div>
 </section>
+
+<section id="hist" hidden>
+ <h2>สรุปรายเดือน</h2>
+ <p class="key">สแกนที่อัปโหลดแต่ละวันจะถูกเก็บไว้ในเครื่องนี้ ใช้ดูสรุป ค่าแรง และปฏิทินย้อนหลังได้ กดวันในปฏิทินเพื่อเปิดรายการของวันนั้น กดชื่อในตารางเพื่อดูรายละเอียดรายคน</p>
+ <div class="tools"><select id="hsite" aria-label="ไซต์"></select><select id="hmon" aria-label="เดือน"></select><select id="htype" aria-label="ประเภทคนงาน"></select><button class="btn" id="hxls">ส่งออก Excel (สรุปเดือน)</button></div>
+ <div class="tools" id="hrules" style="align-items:center"></div>
+ <p class="note" id="hsum"></p>
+ <div id="hcal"></div>
+ <div class="wrapx" id="htab"></div>
+ <div id="hper"></div>
+</section>
+
+<div class="up2" id="bk" style="margin-top:30px">
+ <b>สำรอง / ย้ายข้อมูลระหว่างเครื่อง</b>
+ <p class="key">ส่งออกเป็นไฟล์ แล้วนำเข้าในอีกเครื่อง (ส่งผ่าน AirDrop, LINE, อีเมล หรือแอป Files) ไฟล์มีค่าแรงของคนงาน เก็บให้ปลอดภัย</p>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="bkout">ส่งออกไฟล์สำรอง</button><input type="file" id="bkfile" accept=".json,application/json" aria-label="ไฟล์สำรอง"></div>
+ <p id="bkmsg" role="alert" style="margin:8px 0 0"></p>
+ <div class="wp" id="bkprev" hidden></div>
+</div>
 </div>
 <div id="pdfroot"></div>
 
@@ -196,11 +229,13 @@ const gcol=k=>PAL[((TY.find(t=>t.k===k)||{}).i||0)%PAL.length];
 const tl=k=>(TY.find(t=>t.k===k)||{}).l||'-';
 let W={},R={};
 try{W=JSON.parse(localStorage.getItem('scan-wages')||'{}')||{};R=JSON.parse(localStorage.getItem('scan-roster')||'{}')||{}}catch(e){W={};R={}}
+let DAYS={},FR={ok:1,wn:1,ms:1,md:.5},SN={};
+try{DAYS=JSON.parse(localStorage.getItem('scan-days')||'{}')||{};SN=JSON.parse(localStorage.getItem('scan-sites')||'{}')||{};const f=JSON.parse(localStorage.getItem('scan-rules')||'null');if(f)FR={...FR,...f}}catch(e){DAYS={};SN={}}
 const sk=s=>String(s||'').replace(/[^A-Za-z]/g,'').toLowerCase()||'site';
 const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
 const wsum=r=>{let s=0,m=0;r.forEach(p=>{W[p.id]?s+=W[p.id].w:m++});return fmt(s)+(m?' (ยังไม่มี '+m+' คน)':'')};
 try{G=JSON.parse(localStorage.getItem('scan-groups')||'{}')||{}}catch(e){G={};canStore=false}
-function saveG(){try{localStorage.setItem('scan-groups',JSON.stringify(G));localStorage.setItem('scan-types',JSON.stringify(TY));localStorage.setItem('scan-wages',JSON.stringify(W));localStorage.setItem('scan-roster',JSON.stringify(R));canStore=true}catch(e){canStore=false}$('gwarn').style.display=canStore?'none':'block'}
+function saveG(){try{localStorage.setItem('scan-groups',JSON.stringify(G));localStorage.setItem('scan-types',JSON.stringify(TY));localStorage.setItem('scan-wages',JSON.stringify(W));localStorage.setItem('scan-roster',JSON.stringify(R));localStorage.setItem('scan-days',JSON.stringify(DAYS));localStorage.setItem('scan-sites',JSON.stringify(SN));localStorage.setItem('scan-rules',JSON.stringify(FR));canStore=true}catch(e){canStore=false}$('gwarn').style.display=canStore?'none':'block'}
 /* worker โหลดเป็น script ธรรมดา (window.pdfjsWorker) และไม่ตั้ง workerSrc เพื่อไม่ให้สร้าง Worker ข้ามโดเมน */
 
 async function readLines(file){
@@ -310,14 +345,17 @@ function thDate(d){const [a,b,c]=d.split('-');return (+a)+' '+MON[+b-1]+' '+(+c+
 function show(parsed){
  const rows=parsed.people.map(analyse);
  const rk=sk(parsed.site);
- if(rk){R[rk]=R[rk]||{};parsed.people.forEach(p=>{R[rk][p.id]={n:p.name,l:parsed.date}});saveG()}
+ if(rk){R[rk]=R[rk]||{};parsed.people.forEach(p=>{R[rk][p.id]={n:p.name,l:parsed.date}});
+  const iso=isoOf(parsed.date);
+  if(iso){DAYS[rk]=DAYS[rk]||{};const o={};parsed.people.forEach(p=>{o[p.id]=p.t});DAYS[rk][iso]=o;SN[rk]=parsed.site||SN[rk]||rk}
+  saveG()}
  D={...parsed,rows};filt='all';gfilt='all';$('gwarn').style.display=canStore?'none':'block';
  $('site').textContent=parsed.site||'ไม่ระบุหน่วยงาน';
  $('dt').textContent='ข้อมูลการลงเวลาวันที่ '+thDate(parsed.date);
  const same=parsed.cnt===rows.length,c=$('cnt');
  c.className='note'+(same||parsed.cnt==null?'':' bad');
  c.textContent=parsed.cnt==null?`พบผู้สแกน ${rows.length} คน`:same?`พบผู้สแกน ${rows.length} คน ตรงกับที่หัวรายงานระบุ`:`หัวรายงานระบุ ${parsed.cnt} คน แต่อ่านได้ ${rows.length} คน ตรวจดูว่าอัปโหลดไฟล์ครบทุกหน้าหรือยัง`;
- chips();render();$('res').style.display='block';$('res').scrollIntoView({behavior:'smooth'});
+ chips();render();histRender();$('res').style.display='block';$('res').scrollIntoView({behavior:'smooth'});
 }
 async function handle(file){
  const m=$('msg');m.textContent='';
@@ -492,20 +530,20 @@ function findSite(lines){return (lines.find(l=>/[A-Za-z]{3,}.*\(.*\)/.test(l)&&!
 $('list').addEventListener('change',e=>{
  const id=e.target.dataset&&e.target.dataset.w;if(!id)return;
  const v=e.target.value.trim();
- if(v===''){delete W[id]}else{const n=+v;if(!isFinite(n)||n<0){e.target.value=W[id]?W[id].w:'';return}W[id]={w:n,at:D?D.date:''}}
+ if(v===''){delete W[id]}else{const n=+v;if(!isFinite(n)||n<0){e.target.value=W[id]?W[id].w:'';return}W[id]={...(W[id]||{}),w:n,at:D?D.date:''}}
  saveG();gchips();
 });
 const CATS=[['ก่อสร้าง',/ก่อส/],['ไฟฟ้า',/ไฟ/],['ประปา',/ประปา|สุขา/],['ส่วนกลาง',/ส่วนกลาง/]];
 function parseWage(lines){
- let cat='',site='',from='',to='';const rows=[];
- lines.forEach(l=>{
+ let cat='',site='',from='',to='',secN=0;const rows=[];
+ lines.forEach((l,li)=>{
   const nl=l.replace(/(\d)\s*-\s*(\d)/g,'$1-$2');
   const s=l.match(/หน่วยงาน[^:]*:\s*(.+)/);if(s&&!site)site=s[1].trim();
   const ds=nl.match(/\d{2}-\d{2}-\d{4}/g);if(ds&&ds.length>=2&&!to){from=ds[0];to=ds[1]}
   const t=l.replace(/\s+/g,'');
-  if(/^ช่าง/.test(t)&&!/\d/.test(t)){const m=CATS.filter(c=>c[1].test(t));if(m.length===1)cat=m[0][0]}
+  if(/แรง.*รวม$/.test(t)&&!/\.\d{2}/.test(t)&&li>0){const ti=lines[li-1];if(ti&&!/[:\/]/.test(ti)&&!/\d{2,}/.test(ti)&&/าง/.test(ti)){cat=catOf(ti,secN);secN++}}
   const r=l.match(/^(\d{1,3})\s+(\d{6,8})\s+(.+?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s*$/);
-  if(r&&cat)rows.push({id:r[2],name:r[3].replace(/^(นางสาว|นาย|นาง)\s*/,'').trim(),cat,w:parseFloat(r[4].replace(/,/g,''))});
+  if(r&&cat){const w=parseFloat(r[4].replace(/,/g,'')),tot=parseFloat(r[5].replace(/,/g,''));rows.push({id:r[2],name:r[3].replace(/^(นางสาว|นาย|นาง)\s*/,'').trim(),cat,w,tot,days:w?Math.round(tot/w*2)/2:0})}
  });
  const seen=new Set();
  return{site:site||findSite(lines),from,to,rows:rows.filter(r=>!seen.has(r.id)&&seen.add(r.id))};
@@ -526,7 +564,7 @@ function wpReview(){
  const per=WP.to?' (ข้อมูลวันที่ '+esc(WP.from===WP.to?WP.to:WP.from+' ถึง '+WP.to)+')':'';
  $('wprev').innerHTML=`<b>พบ ${rows.length} คน${per}</b>
  <div class="key" style="margin:4px 0">คนใหม่ ${nw.length} · ค่าแรงตรงกับที่จำไว้ ${sm.length} · ค่าแรงต่างจากที่จำไว้ ${ch.length}</div>
- ${ch.length?`<table><thead><tr><th>ชื่อ</th><th>รหัส</th><th>ที่จำไว้</th><th>ในไฟล์นี้</th></tr></thead><tbody>${ch.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.id)}</td><td>${fmt(W[r.id].w)}</td><td>${fmt(r.w)}</td></tr>`).join('')}</tbody></table><div class="key">ถ้าเป็นรอบปรับค่าแรง ให้เลือก “เพิ่มคนใหม่ และอัปเดตค่าที่เปลี่ยน” แต่ถ้าวันนั้นมีคนทำงานไม่ครบวัน ค่าในไฟล์อาจต่ำกว่าอัตราปกติ ให้เลือกเพิ่มเฉพาะคนใหม่</div>`:''}
+ ${ch.length?`<table><thead><tr><th>ชื่อ</th><th>รหัส</th><th>ที่จำไว้</th><th>ในไฟล์นี้</th></tr></thead><tbody>${ch.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.id)}</td><td>${fmt(W[r.id].w)}</td><td>${fmt(r.w)}</td></tr>`).join('')}</tbody></table><div class="key">ถ้าเป็นรอบปรับค่าแรง ให้เลือก “เพิ่มคนใหม่ และอัปเดตค่าที่เปลี่ยน” แล้วระบุวันที่มีผล ค่าแรงเดิมจะยังใช้กับวันก่อนวันที่มีผล</div><label class="wg" style="display:flex">มีผลตั้งแต่วันที่ <input type="date" id="weff" value="${isoOf(WP.from)}" style="width:auto"></label>`:''}
  <label class="wg" style="display:flex"><input type="checkbox" id="wtyp" checked style="width:auto"> ตั้งประเภทคนงานตามหัวข้อในไฟล์ (ก่อสร้าง = ST/AR, ไฟฟ้า, ประปา = สุขาภิบาล, ส่วนกลาง) เฉพาะคนที่ยังไม่ระบุประเภท</label>
  <div class="ro"><button class="btn pri" id="wok1">เพิ่มเฉพาะคนใหม่${nw.length?' ('+nw.length+')':''}</button>${ch.length?`<button class="btn" id="wok2">เพิ่มคนใหม่ และอัปเดตค่าที่เปลี่ยน (${ch.length})</button>`:''}<button class="btn" id="wno">ยกเลิก</button></div>`;
  $('wprev').hidden=false;
@@ -540,10 +578,10 @@ function catKey(cat){
 }
 function wapply(upd){
  let a=0,u=0,t=0;const key=sk(WP.site),at=WP.to||'';
- const typ=$('wtyp')&&$('wtyp').checked;
+ const typ=$('wtyp')&&$('wtyp').checked,eff=($('weff')&&$('weff').value)||isoOf(WP.from)||'0000-00-00';
  WP.rows.forEach(r=>{
   const o=W[r.id];
-  if(!o){W[r.id]={w:r.w,at};a++}else if(upd&&o.w!==r.w){W[r.id]={w:r.w,at};u++}
+  if(!o){W[r.id]={w:r.w,at};a++}else if(upd&&o.w!==r.w){o.h=(o.h||[]).concat([[eff,o.w]]);o.w=r.w;o.at=at;u++}
   if(key){R[key]=R[key]||{};if(!R[key][r.id])R[key][r.id]={n:r.name,l:at||'-'}}
   if(typ&&!G[r.id]){const k=catKey(r.cat);if(k){G[r.id]=k;t++}}
  });
@@ -557,6 +595,137 @@ $('wprev').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.id==='wok1')wapply(false);else if(b.id==='wok2')wapply(true);else if(b.id==='wno'){$('wprev').hidden=true;WP=null}
 });
+
+/* ---------- สรุปรายเดือน / ปฏิทิน ---------- */
+const isoOf=d=>{const m=String(d||'').match(/^(\d{2})-(\d{2})-(\d{4})$/);return m?m[3]+'-'+m[2]+'-'+m[1]:''};
+const dispOf=i=>i.slice(8)+'-'+i.slice(5,7)+'-'+i.slice(0,4);
+const rateOn=(id,iso)=>{const o=W[id];if(!o)return null;const h=(o.h||[]).slice().sort((a,b)=>a[0]<b[0]?-1:1);for(const e of h){if(iso<e[0])return e[1]}return o.w};
+const fk=n=>n>=1000?(n/1000).toFixed(1).replace(/\.0$/,'')+'k':fmt(n);
+function catOf(title,n){const t=title.replace(/\s+/g,'');if(/ไฟ/.test(t))return'ไฟฟ้า';if(/ประปา|สุขา/.test(t))return'ประปา';if(/กลาง/.test(t))return'ส่วนกลาง';if(/อส|ก่อ/.test(t))return'ก่อสร้าง';return['ไฟฟ้า','ประปา','ส่วนกลาง','ก่อสร้าง'][n]||''}
+let HS={site:'',ym:'',type:'all',pid:''};
+function monthCalc(key,ym){
+ const days=DAYS[key]||{},rn=R[key]||{},ppl={};
+ Object.keys(days).filter(d=>d.startsWith(ym)).sort().forEach(iso=>{
+  const dd=days[iso];
+  Object.keys(dd).forEach(id=>{
+   const nm=(rn[id]||{}).n||id,a=analyse({id,name:nm,t:dd[id]}),f=FR[a.st],r=rateOn(id,iso),pay=r==null?null:f*r;
+   const p=ppl[id]=ppl[id]||{id,name:nm,n:0,eq:0,cnt:{ok:0,wn:0,ms:0,md:0},pay:0,nr:0,d:{}};
+   p.n++;p.eq+=f;p.cnt[a.st]++;if(pay==null)p.nr++;else p.pay+=pay;
+   p.d[iso]={st:a.st,f,pay,fl:a.fl};
+  });
+ });
+ return ppl;
+}
+function histList(){
+ const gi=id=>{const k=TY.findIndex(t=>t.k===G[id]);return k<0?99:k};
+ return Object.values(monthCalc(HS.site,HS.ym)).filter(p=>HS.type==='all'||(G[p.id]||'none')===HS.type).sort((a,b)=>gi(a.id)-gi(b.id)||String(a.name).localeCompare(String(b.name)));
+}
+function calGrid(ym,cell){
+ const y=+ym.slice(0,4),m=+ym.slice(5),first=new Date(y,m-1,1).getDay(),nd=new Date(y,m,0).getDate();
+ let h=['อา','จ','อ','พ','พฤ','ศ','ส'].map(x=>`<div class="h">${x}</div>`).join('')+'<div></div>'.repeat(first);
+ for(let d=1;d<=nd;d++)h+=cell(ym+'-'+String(d).padStart(2,'0'),d);
+ return `<div class="cal">${h}</div>`;
+}
+const monLabel=()=>MON[+HS.ym.slice(5)-1]+' '+(+HS.ym.slice(0,4)+543);
+function histRender(){
+ const sites=Object.keys(DAYS).filter(k=>Object.keys(DAYS[k]).length);
+ $('hist').hidden=!sites.length;if(!sites.length)return;
+ if(!sites.includes(HS.site))HS.site=(D&&sites.includes(sk(D.site)))?sk(D.site):sites[0];
+ const mons=[...new Set(Object.keys(DAYS[HS.site]).map(d=>d.slice(0,7)))].sort().reverse();
+ if(!mons.includes(HS.ym))HS.ym=mons[0];
+ const tys=[['all','ทุกประเภท'],...TY.map(t=>[t.k,t.l]),['none','ยังไม่ระบุประเภท']];
+ if(!tys.some(x=>x[0]===HS.type))HS.type='all';
+ $('hsite').innerHTML=sites.map(k=>`<option value="${esc(k)}">${esc(SN[k]||k)}</option>`).join('');$('hsite').value=HS.site;
+ $('hmon').innerHTML=mons.map(m=>`<option value="${m}">${MON[+m.slice(5)-1]} ${+m.slice(0,4)+543}</option>`).join('');$('hmon').value=HS.ym;
+ $('htype').innerHTML=tys.map(x=>`<option value="${esc(x[0])}">${esc(x[1])}</option>`).join('');$('htype').value=HS.type;
+ $('hrules').innerHTML='<span class="key" style="margin:0">นับเป็นกี่วัน:</span>'+Object.keys(ST).map(k=>`<label class="wg" style="margin:0">${ST[k]} <input type="number" step="0.5" min="0" max="2" data-fr="${k}" value="${FR[k]}" style="width:64px"></label>`).join('');
+ const list=histList(),cal={};
+ let eq=0,pay=0,nr=0,n=0;
+ list.forEach(p=>{eq+=p.eq;pay+=p.pay;nr+=p.nr;n+=p.n;Object.keys(p.d).forEach(iso=>{const c=cal[iso]=cal[iso]||{n:0,tot:0,miss:0};c.n++;if(p.d[iso].pay==null)c.miss++;else c.tot+=p.d[iso].pay})});
+ $('hsum').className='note'+(nr?' bad':'');
+ $('hsum').textContent=`${monLabel()}: ${list.length} คน · ${n} คน-วันที่มาสแกน · นับเป็น ${fmt(eq)} วัน · ค่าแรงประมาณ ${fmt(pay)} บาท`+(nr?` · มี ${nr} คน-วันที่ยังไม่มีค่าแรง (ไม่รวมในยอด ขึ้นดอกจัน)`:'');
+ $('hcal').innerHTML=calGrid(HS.ym,(iso,d)=>{const c=cal[iso];return c?`<button class="c" data-day="${iso}"><b>${d}</b>${c.n} คน<br>${fk(c.tot)}${c.miss?'*':''}</button>`:`<div class="c x"><b>${d}</b></div>`});
+ const th='<th>ชื่อ</th><th>ประเภท</th><th>ค่าแรง/วัน</th><th>มา (วัน)</th><th>นับเป็น (วัน)</th><th>ปกติ</th><th>สาย/เลท</th><th>ไม่ครบ</th><th>ออกกลางคัน</th><th>ค่าแรงประมาณ</th>';
+ $('htab').innerHTML=list.length?`<table class="ht"><thead><tr>${th}</tr></thead><tbody>${list.map(p=>`<tr><td><button class="lnk" data-pid="${esc(p.id)}">${esc(p.name)}</button><br><small>${esc(p.id)}</small></td><td>${G[p.id]?esc(tl(G[p.id])):'-'}</td><td>${W[p.id]?fmt(W[p.id].w):'-'}</td><td>${p.n}</td><td>${fmt(p.eq)}</td><td>${p.cnt.ok}</td><td>${p.cnt.wn}</td><td>${p.cnt.ms}</td><td>${p.cnt.md}</td><td>${fmt(p.pay)}${p.nr?'*':''}</td></tr>`).join('')}</tbody><tfoot><tr><td>รวม ${list.length} คน</td><td></td><td></td><td>${n}</td><td>${fmt(eq)}</td><td></td><td></td><td></td><td></td><td>${fmt(pay)}</td></tr></tfoot></table>`:'<div class="empty">ไม่มีข้อมูลตามเงื่อนไขนี้</div>';
+ const p=list.find(x=>x.id===HS.pid);
+ $('hper').innerHTML=p?`<h3>${esc(p.name)} <small style="font-weight:400;color:var(--mut)">รหัส ${esc(p.id)} · ${G[p.id]?esc(tl(G[p.id])):'ยังไม่ระบุประเภท'} · ค่าแรง ${W[p.id]?fmt(W[p.id].w)+' บาท/วัน':'ยังไม่มี'}</small> <button class="btn" data-pclose="1">ปิด</button></h3>
+ <p class="key">${monLabel()}: มา ${p.n} วัน นับเป็น ${fmt(p.eq)} วัน ค่าแรงประมาณ ${fmt(p.pay)} บาท${p.nr?' (ยังไม่มีค่าแรง '+p.nr+' วัน)':''}</p>
+ ${calGrid(HS.ym,(iso,d)=>{const x=p.d[iso];return x?`<div class="c s-${x.st}"><b>${d}</b>${fmt(x.f)} วัน<br>${x.pay==null?'-':fk(x.pay)}</div>`:`<div class="c x"><b>${d}</b></div>`})}
+ ${Object.keys(p.d).sort().filter(i=>p.d[i].st!=='ok').map(i=>`<div class="ar"><span><b>${+i.slice(8)} ${MON[+i.slice(5,7)-1]}</b> <small>${p.d[i].fl.map(x=>esc(x[1])).join(' · ')}</small></span></div>`).join('')}`:'';
+}
+function openDay(iso){
+ const dd=(DAYS[HS.site]||{})[iso];if(!dd)return;
+ const rn=R[HS.site]||{};
+ show({site:SN[HS.site]||'',cnt:null,date:dispOf(iso),people:Object.keys(dd).map(id=>({id,name:(rn[id]||{}).n||id,t:dd[id]}))});
+}
+$('hsite').onchange=e=>{HS.site=e.target.value;HS.pid='';histRender()};
+$('hmon').onchange=e=>{HS.ym=e.target.value;HS.pid='';histRender()};
+$('htype').onchange=e=>{HS.type=e.target.value;HS.pid='';histRender()};
+$('hrules').addEventListener('change',e=>{const k=e.target.dataset.fr;if(!k)return;const v=parseFloat(e.target.value);if(isFinite(v)&&v>=0&&v<=2){FR[k]=v;saveG()}histRender()});
+$('hist').addEventListener('click',e=>{
+ const day=e.target.closest('[data-day]');if(day){openDay(day.dataset.day);return}
+ const pb=e.target.closest('[data-pid]');if(pb){HS.pid=pb.dataset.pid;histRender();$('hper').scrollIntoView({behavior:'smooth'});return}
+ if(e.target.closest('[data-pclose]')){HS.pid='';histRender()}
+});
+async function exportMonth(){
+ const list=histList();if(!list.length)return;
+ const b=$('hxls'),old=b.textContent;b.disabled=true;
+ try{
+  const days=[...new Set(list.flatMap(p=>Object.keys(p.d)))].sort(),ty=p=>G[p.id]?tl(G[p.id]):'ยังไม่ระบุ';
+  const s1=XLSX.utils.aoa_to_sheet([['สรุปรายเดือน',monLabel()],['ไซต์',SN[HS.site]||''],['เกณฑ์นับวัน',Object.keys(ST).map(k=>ST[k]+' = '+FR[k]).join(' · ')],[],['รหัส','ชื่อ','ประเภท','ค่าแรง/วัน (ปัจจุบัน)','มา (วัน)','นับเป็น (วัน)','ปกติ','สาย/เลท','ไม่ครบ','ออกกลางคัน','ค่าแรงประมาณ','วันที่ยังไม่มีค่าแรง'],...list.map(p=>[p.id,p.name,ty(p),W[p.id]?W[p.id].w:'',p.n,p.eq,p.cnt.ok,p.cnt.wn,p.cnt.ms,p.cnt.md,p.pay,p.nr]),['รวม','','','',list.reduce((s,p)=>s+p.n,0),list.reduce((s,p)=>s+p.eq,0),'','','','',list.reduce((s,p)=>s+p.pay,0),'']]);
+  s1['!cols']=[{wch:11},{wch:26},{wch:16},{wch:14},{wch:9},{wch:12},{wch:7},{wch:9},{wch:9},{wch:12},{wch:14},{wch:18}];
+  const mat=(f,tot)=>XLSX.utils.aoa_to_sheet([['รหัส','ชื่อ','ประเภท',...days.map(d=>+d.slice(8)),'รวม'],...list.map(p=>[p.id,p.name,ty(p),...days.map(d=>p.d[d]?f(p.d[d]):''),tot(p)])]);
+  const s2=mat(x=>x.f,p=>p.eq),s3=mat(x=>x.pay==null?'':x.pay,p=>p.pay);
+  s2['!cols']=s3['!cols']=[{wch:11},{wch:26},{wch:16}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,s1,'สรุปรายคน');XLSX.utils.book_append_sheet(wb,s2,'ตารางวัน (วันนับ)');XLSX.utils.book_append_sheet(wb,s3,'ตารางวัน (บาท)');
+  await saveFile(new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'summary-'+HS.ym+(HS.type!=='all'?'-'+HS.type:'')+'.xlsx');
+ }catch(e){if(!(e&&e.code==='declined'))$('msg').textContent='สร้าง Excel ไม่สำเร็จ: '+(e&&e.message||e)}
+ b.disabled=false;b.textContent=old;
+}
+$('hxls').onclick=exportMonth;
+
+/* ---------- สำรอง / นำเข้าข้อมูล ---------- */
+let BK=null;
+const bkm=(t,c)=>{const m=$('bkmsg');m.style.color=c||'';m.textContent=t};
+$('bkout').onclick=async()=>{
+ try{
+  const o={v:1,at:new Date().toISOString(),G,TY,W,R,DAYS,FR,SN};
+  await saveFile(new Blob([JSON.stringify(o)],{type:'application/json'}),'scan-backup-'+o.at.slice(0,10)+'.json');
+  bkm('สร้างไฟล์สำรองแล้ว','var(--ok)');
+ }catch(e){if(!(e&&e.code==='declined'))bkm('สร้างไฟล์สำรองไม่สำเร็จ: '+(e&&e.message||e))}
+};
+$('bkfile').addEventListener('change',async e=>{
+ const f=e.target.files[0];e.target.value='';bkm('');$('bkprev').hidden=true;if(!f)return;
+ try{
+  const b=JSON.parse(await f.text());if(!b||b.v!==1)throw new Error('x');
+  BK=b;const nd=Object.values(b.DAYS||{}).reduce((s,o)=>s+Object.keys(o).length,0);
+  $('bkprev').innerHTML=`<b>ไฟล์สำรอง (${esc(String(b.at||'').slice(0,10))})</b><div class="key" style="margin:4px 0">คนที่จำประเภทไว้ ${Object.keys(b.G||{}).length} · ค่าแรง ${Object.keys(b.W||{}).length} คน · รายชื่อ ${Object.values(b.R||{}).reduce((s,o)=>s+Object.keys(o).length,0)} · วันที่เก็บสแกน ${nd} วัน</div>
+  <div class="ro"><button class="btn pri" id="bkm">ผสานกับข้อมูลในเครื่อง</button><button class="btn" id="bkr">แทนที่ข้อมูลทั้งหมด</button><button class="btn" id="bkc">ยกเลิก</button></div>
+  <div class="key">ผสาน: เพิ่มของที่ยังไม่มี และถ้าซ้ำกันจะใช้ค่าจากไฟล์</div>`;
+  $('bkprev').hidden=false;
+ }catch(x){bkm('ไฟล์นี้ไม่ใช่ไฟล์สำรองของแอพนี้')}
+});
+function applyBk(replace){
+ const b=BK;if(!b)return;
+ if(replace){G=b.G||{};if(b.TY&&b.TY.length)TY=b.TY;W=b.W||{};R=b.R||{};DAYS=b.DAYS||{};SN=b.SN||{};FR={ok:1,wn:1,ms:1,md:.5,...(b.FR||{})}}
+ else{
+  Object.assign(G,b.G||{});
+  (b.TY||[]).forEach(t=>{const e=TY.find(x=>x.k===t.k);if(e){e.l=t.l;e.i=t.i}else TY.push(t)});
+  Object.assign(W,b.W||{});Object.assign(SN,b.SN||{});FR={...FR,...(b.FR||{})};
+  Object.keys(b.R||{}).forEach(k=>{R[k]=Object.assign(R[k]||{},b.R[k])});
+  Object.keys(b.DAYS||{}).forEach(k=>{DAYS[k]=Object.assign(DAYS[k]||{},b.DAYS[k])});
+ }
+ BK=null;syncT();saveG();tmRender();histRender();if(D){chips();render()}
+ $('bkprev').hidden=true;bkm('นำเข้าข้อมูลแล้ว','var(--ok)');
+}
+$('bkprev').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.id==='bkm')applyBk(false);
+ else if(b.id==='bkr'){if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='กดอีกครั้งเพื่อยืนยันแทนที่';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='แทนที่ข้อมูลทั้งหมด'}},4000)}else applyBk(true)}
+ else if(b.id==='bkc'){$('bkprev').hidden=true;BK=null}
+});
+histRender();
 </script>
 </body>
 </html>
