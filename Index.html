@@ -96,6 +96,23 @@ button,select,input{font:inherit;color:inherit}
 .wp .ro{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .abs{margin-bottom:12px;background:var(--sf);border:1px solid var(--ln);border-radius:10px;padding:10px 14px}
 .abs summary{cursor:pointer;font-weight:500}
+#absl{display:grid;gap:12px;margin-top:10px}
+.abs-group{min-width:0;border:1px solid var(--ln);border-radius:10px}
+.abs-group-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-radius:9px 9px 0 0;background:var(--abs-color);color:var(--abs-text)}
+.abs-group-head h3{margin:0;font-size:1rem;overflow-wrap:anywhere}
+.abs-count,.abs-type{border-radius:6px;padding:2px 8px;font-size:.82rem;font-weight:600}
+.abs-count{flex:none;border:1px solid currentColor;font-variant-numeric:tabular-nums}
+.abs-type{display:inline-block;max-width:100%;margin-top:4px;background:var(--abs-color);color:var(--abs-text);overflow-wrap:anywhere}
+.abs-people{list-style:none;margin:0;padding:8px;display:grid;gap:6px}
+#absl .ar{margin:0;border:1px solid var(--ln);border-inline-start:5px solid var(--abs-color);border-radius:8px;padding:8px 10px}
+.abs-person{flex:1 1 12rem;min-width:0;overflow-wrap:anywhere}
+.abs-person b,.abs-person small{display:block}
+@media(max-width:480px){
+ .abs{padding-inline:10px}
+ #absl .ar{align-items:stretch;flex-direction:column}
+ .abs-person{flex:auto}
+ #absl .ar .btn{min-height:44px}
+}
 .ar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--ln)}
 .ar small{color:var(--mut)}
 #hist h2{font-size:1.2rem;margin:30px 0 8px}
@@ -509,7 +526,26 @@ function absRender(){
  const has=Object.keys(R[sk(D.site)]||{}).length>0;el.hidden=!has;if(!has)return;
  const a=absList();
  $('abss').textContent='ไม่พบการสแกนวันนี้ '+a.length+' คน (จากรายชื่อที่แอพจำไว้)';
- $('absl').innerHTML=a.length?a.map(x=>`<div class="ar"><span><b>${esc(x.name)}</b> <small>รหัส ${esc(x.id)} · ${G[x.id]?esc(tl(G[x.id])):'ยังไม่ระบุกลุ่ม'}${W[x.id]?' · ค่าแรง '+fmt(W[x.id].w):''} · เห็นล่าสุด ${esc(x.last)}</small></span><button class="btn" data-rm="${esc(x.id)}">เอาออกจากรายชื่อ</button></div>`).join(''):'<p class="key" style="margin:8px 0 0">ทุกคนในรายชื่อที่จำไว้มีการสแกนแล้ว</p>';
+ if(!a.length){
+  $('absl').innerHTML='<p class="key">'+(gfilt==='all'?'ทุกคนในรายชื่อที่จำไว้มีการสแกนแล้ว':'ไม่มีรายชื่อที่ไม่พบการสแกนในประเภทที่เลือก')+'</p>';
+  return;
+ }
+ const usedColors=new Set();
+ const byType=new Map(TY.map((t,index)=>{
+  let color=gcol(t.k);
+  if(usedColors.has(color[0]))color=[`hsl(${((index*137.508)%360).toFixed(2)} 65% 28%)`,'#fff'];
+  usedColors.add(color[0]);
+  return [t.k,{label:t.l,color,people:[]}];
+ }));
+ const unassigned={label:'ยังไม่ระบุประเภท',color:['#374151','#fff'],people:[]};
+ a.forEach(person=>(byType.get(G[person.id])||unassigned).people.push(person));
+ $('absl').innerHTML=[...byType.values(),unassigned].filter(group=>group.people.length).map(({label,color,people})=>
+  `<section class="abs-group" style="--abs-color:${color[0]};--abs-text:${color[1]}">
+   <div class="abs-group-head"><h3>${esc(label)}</h3><span class="abs-count">${people.length} คน</span></div>
+   <ul class="abs-people">${people.map(x=>`<li class="ar"><div class="abs-person"><b>${esc(x.name)}</b>
+    <small>รหัส ${esc(x.id)}${W[x.id]?' · ค่าแรง '+fmt(W[x.id].w):''} · เห็นล่าสุด ${esc(x.last)}</small>
+    <span class="abs-type">${esc(label)}</span></div><button class="btn" data-rm="${esc(x.id)}">เอาออกจากรายชื่อ</button></li>`).join('')}</ul>
+  </section>`).join('');
 }
 $('abs').addEventListener('click',e=>{
  const b=e.target.closest('[data-rm]');if(!b)return;
