@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ตรวจสอบรายสแกนหน้า</title>
+<title>TMAN · วางแผนงวดงาน</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -141,10 +141,10 @@ button,select,input{font:inherit;color:inherit}
 .pg .ok{color:#1F7A4D}.pg .wn{color:#9A6700}.pg .ms{color:#B3261E}.pg .md{color:#2F55A4}
 .pg .ft{position:absolute;left:44px;right:44px;bottom:26px;display:flex;justify-content:space-between;color:#777;font-size:11px}
 </style>
-</head>
+<link rel="stylesheet" href="planner.css"></head>
 <body>
 <div class="wrap">
-<header>
+<nav id="modules"><strong>TMAN</strong><button id="openPlan">วางแผนงวดงาน</button><button id="openScan">ตรวจสแกนหน้า</button><a href="#bk">สำรองข้อมูล</a></nav><main id="planner"></main><div id="scanner" hidden><header>
  <h1>ตรวจสอบรายสแกนหน้า</h1>
  <p>อัปโหลด PDF รายงานข้อมูลการลงเวลาจากระบบ TMC HR ระบบจะสรุปให้ว่าใครสแกนครบ สาย ขาด หรือออกกลางคัน</p>
 </header>
@@ -213,7 +213,7 @@ button,select,input{font:inherit;color:inherit}
  <div id="hper"></div>
 </section>
 
-<div class="up2" id="bk" style="margin-top:30px">
+</div><div class="up2" id="bk" style="margin-top:30px">
  <b>สำรอง / ย้ายข้อมูลระหว่างเครื่อง</b>
  <p class="key">ส่งออกเป็นไฟล์ แล้วนำเข้าในอีกเครื่อง (ส่งผ่าน AirDrop, LINE, อีเมล หรือแอป Files) ไฟล์มีค่าแรงของคนงาน เก็บให้ปลอดภัย</p>
  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="bkout">ส่งออกไฟล์สำรอง</button><input type="file" id="bkfile" accept=".json,application/json" aria-label="ไฟล์สำรอง"></div>
@@ -726,7 +726,7 @@ let BK=null;
 const bkm=(t,c)=>{const m=$('bkmsg');m.style.color=c||'';m.textContent=t};
 $('bkout').onclick=async()=>{
  try{
-  const o={v:1,at:new Date().toISOString(),G,TY,W,R,DAYS,FR,SN};
+  const o={v:1,at:new Date().toISOString(),G,TY,W,R,DAYS,FR,SN,planner:planStore};
   await saveFile(new Blob([JSON.stringify(o)],{type:'application/json'}),'scan-backup-'+o.at.slice(0,10)+'.json');
   bkm('สร้างไฟล์สำรองแล้ว','var(--ok)');
  }catch(e){if(!(e&&e.code==='declined'))bkm('สร้างไฟล์สำรองไม่สำเร็จ: '+(e&&e.message||e))}
@@ -743,7 +743,7 @@ $('bkfile').addEventListener('change',async e=>{
  }catch(x){bkm('ไฟล์นี้ไม่ใช่ไฟล์สำรองของแอพนี้')}
 });
 function applyBk(replace){
- const b=BK;if(!b)return;
+ const b=BK;if(!b)return; if(b.planner && !restorePlan(b.planner,replace))return;
  if(replace){G=b.G||{};if(b.TY&&b.TY.length)TY=b.TY;W=b.W||{};R=b.R||{};DAYS=b.DAYS||{};SN=b.SN||{};FR={ok:1,wn:1,ms:1,md:.5,...(b.FR||{})}}
  else{
   Object.assign(G,b.G||{});
@@ -763,5 +763,5 @@ $('bkprev').addEventListener('click',e=>{
 });
 histRender();
 </script>
-</body>
+<script src="installments.js"></script><script src="planner.js"></script></body>
 </html>
