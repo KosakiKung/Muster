@@ -896,32 +896,33 @@ const shift=(d,n)=>new Date(Date.parse(d+'T12:00:00Z')+n*86400000).toISOString()
 const dates=(a,b)=>{const r=[];if(a&&b)for(let d=a;d<=b;d=shift(d,1))r.push(d);return r};
 const selected=()=>p().contract.filter(c=>cfg()['use'+c.n]);
 const jobs=()=>selected().flatMap(c=>c.jobs.map((name,i)=>({id:c.n+'.'+(i+1),name,n:c.n})));
-function scopeKey(){return 'set:'+selected().map(c=>c.n).join(',')+':'}
+const installmentLabel=n=>/^\d+(?:\.\d+)*$/.test(String(n))?'งวด '+n:String(n);
+function scopeKey(){return 'set:'+selected().map(c=>encodeURIComponent(c.n)).join(',')+':'}
 function scoped(){const s=cfg(),prefix=scopeKey();return Object.fromEntries(['base','cut','claim','openingMachine','adjustment'].map(k=>[k,s[prefix+k]]))}
 const isOff=d=>(cfg().holidays||'').split(/[\s,]+/).includes(d);
 const work=(a,b)=>dates(a,b).filter(d=>!isOff(d));
 const value=(v)=>esc(v??''), money=n=>Number(n).toLocaleString('th-TH',{maximumFractionDigits:2});
-function field(label,key,type='text',obj=cfg()){return `<label>${label}<input data-field="${value(key)}" type="${type}" ${type==='number'?((key.endsWith(':adjustment')?'':'min="0" ')+'step="any"'):''} value="${value(obj[key])}"></label>`}
+function field(label,key,type='text',obj=cfg(),kind=''){return `<label>${label}<input data-field="${value(key)}" data-cost-kind="${kind}" type="${type}" ${type==='number'?((key.endsWith(':adjustment')?'':'min="0" ')+'step="any"'):''} value="${value(obj[key])}"></label>`}
 function assignments(d){return Object.values(day(d).people||{})}
-function costs(d){const ns=new Set(selected().map(c=>String(c.n)));return assignments(d).reduce((s,a)=>s+['am','pm'].filter(k=>a[k]&&ns.has(a[k].split('.')[0])&&a.struct).length*a.half,0)}
+function costs(d){const ns=new Set(selected().map(c=>String(c.n)));return assignments(d).reduce((s,a)=>s+['am','pm'].filter(k=>a[k]&&ns.has(a[k].slice(0,a[k].lastIndexOf('.')))&&a.struct).length*a.half,0)}
 
 function allocated(n){
- const contract=p().contract.find(c=>c.n===n);
+ const contract=p().contract.find(c=>String(c.n)===String(n));
  return contract.jobs.reduce((sum,_,i)=>sum+Math.round(Number(cfg()[n+'.'+(i+1)+'labor']||0)*100),0)/100;
 }
 function allocationFields(j){
  const budget=Number(cfg()['budget'+j.n]||0),used=allocated(j.n);
- const help=budget>0?`งวด ${j.n} · ต้นทุน ${money(budget)} บาท · คงเหลือจัดสรร ${money(budget-used)} บาท`:`กรอกค่าแรงงวด ${j.n} (100%) ก่อนจัดสรร`;
+ const help=budget>0?`${value(installmentLabel(j.n))} · ต้นทุน ${money(budget)} บาท · คงเหลือจัดสรร ${money(budget-used)} บาท`:`กรอกค่าแรง ${value(installmentLabel(j.n))} (100%) ก่อนจัดสรร`;
  const disabled=budget<=0?'disabled':'',amount=cfg()[j.id+'labor'];
- return `<label>ค่าแรงที่จัดสรร (บาท)<input type="number" step="0.01" min="0" data-field="${j.id}labor" value="${value(amount)}" ${disabled}></label>
- <label>หรือ % ของค่าแรงงวด<input type="number" min="0" max="100" step="any" data-share="${j.id}" value="${budget&&amount!==undefined&&amount!==''?Number((100*amount/budget).toFixed(4)):''}" ${disabled}></label><small>${help}</small>`;
+ return `<label>ค่าแรงที่จัดสรร (บาท)<input type="number" step="0.01" min="0" data-field="${value(j.id)}labor" value="${value(amount)}" ${disabled}></label>
+ <label>หรือ % ของค่าแรงงวด<input type="number" min="0" max="100" step="any" data-share="${value(j.id)}" value="${budget&&amount!==undefined&&amount!==''?Number((100*amount/budget).toFixed(4)):''}" ${disabled}></label><small>${help}</small>`;
 }
 function summaryCosts(f){
  const baht=n=>n==null?'—':Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
  const row=(label,amount,cls='',pct=false)=>`<tr class="${cls}"><th>${label}</th><td>${pct?'%':'THB'}</td><td>${baht(amount)}</td></tr>`;
  return `<table class="cost-summary"><tbody>${row('ค่าแรงต้นทุนรวม (100%)',f.budget,'budget-total')}
  ${row('ค่าแรงงานเพิ่ม–ลด',f.adjustment)}
- ${selected().map(c=>row(`ค่าแรงงวดที่ ${c.n} (100%)`,Number(cfg()['budget'+c.n]||0))).join('')}
+ ${selected().map(c=>row(`ค่าแรง ${value(installmentLabel(c.n))} (100%)`,Number(cfg()['budget'+c.n]||0))).join('')}
  ${row('ค่าแรงสะสม ณ ปัจจุบัน',f.labor,'actual-labor')}
  ${row('ค่าเครื่องจักรสะสม ณ ปัจจุบัน',f.machine,'actual-machine')}
  ${row('สรุปค่าแรง ณ ปัจจุบัน',f.budget>0&&f.actual!==null?100*f.actual/f.budget:null,'cost-ratio',true)}</tbody></table>`;
@@ -944,13 +945,13 @@ function forecast(d){
  const budget=adjustment+selected().reduce((s,c)=>s+Number(cfg()['budget'+c.n]||0),0);
  return {actual,labor,machine,adjustment,avg,remaining,estimate,budget,count:confirmed.length}
 }
-function setup(){return `<section class="pbox"><h2>ทะเบียนงวดตามสัญญา</h2><div class="pactions"><button id="addContract">เพิ่มงวดเอง</button><label>นำเข้า PDF <input id="contractFile" type="file" accept="application/pdf"></label></div><div id="review"></div>${p().contract.map(c=>`<details><summary><input data-use="${c.n}" type="checkbox" ${cfg()['use'+c.n]?'checked':''}> งวด ${c.n} · ${money(c.price)} บาท · ${c.jobs.length} รายการ</summary><p>${c.jobs.map(value).join('<br>')}</p><small>${value(c.note)}</small><div class="pfields">${field('ค่าแรงต้นทุนงวดที่ '+c.n+' (100%) บาท','budget'+c.n,'number')}</div></details>`).join('')}</section><section class="pbox"><h2>ตั้งค่าชุดงวดที่เลือก</h2><div class="pfields">${field('ต้นทุนใช้จริงยกมารวมแรงและเครื่องจักร (บาท)',scopeKey()+'base','number')}${field('ค่าเครื่องจักรที่รวมอยู่ในยอดยกมา (บาท)',scopeKey()+'openingMachine','number')}${field('ค่าแรงงานเพิ่ม–ลดตามงวดที่เลือก (บาท)',scopeKey()+'adjustment','number')}${field('ตัดยอดถึงวันที่',scopeKey()+'cut','date')}${field('วันเบิกงวด',scopeKey()+'claim','date')}${field('วันหยุด (YYYY-MM-DD คั่นด้วยช่องว่าง)','holidays')}</div></section>`}
+function setup(){return `<section class="pbox"><h2>ทะเบียนงวดตามสัญญา</h2><div class="pactions"><button id="addContract">เพิ่มงวดเอง</button><label>นำเข้า PDF <input id="contractFile" type="file" accept="application/pdf"></label></div><div id="review"></div>${p().contract.map(c=>`<details><summary><input data-use="${value(c.n)}" type="checkbox" ${cfg()['use'+c.n]?'checked':''}> ${value(installmentLabel(c.n))} · ${money(c.price)} บาท · ${c.jobs.length} รายการ</summary><p>${c.jobs.map(value).join('<br>')}</p><small>${value(c.note)}</small><div class="pfields">${field('ค่าแรงต้นทุน '+value(installmentLabel(c.n))+' (100%) บาท','budget'+c.n,'number',cfg(),'budget')}</div></details>`).join('')}</section><section class="pbox"><h2>ตั้งค่าชุดงวดที่เลือก</h2><div class="pfields">${field('ต้นทุนใช้จริงยกมารวมแรงและเครื่องจักร (บาท)',scopeKey()+'base','number')}${field('ค่าเครื่องจักรที่รวมอยู่ในยอดยกมา (บาท)',scopeKey()+'openingMachine','number')}${field('ค่าแรงงานเพิ่ม–ลดตามงวดที่เลือก (บาท)',scopeKey()+'adjustment','number')}${field('ตัดยอดถึงวันที่',scopeKey()+'cut','date')}${field('วันเบิกงวด',scopeKey()+'claim','date')}${field('วันหยุด (YYYY-MM-DD คั่นด้วยช่องว่าง)','holidays')}</div></section>`}
 function latest(key,d=date){for(const k of Object.keys(p().days).filter(k=>k<=d).sort().reverse()){if(day(k)[key]!==undefined&&day(k)[key]!=='')return day(k)[key]}return ''}
-function taskFields(){return jobs().map(j=>`<article><b>${j.id} ${value(j.name)}</b><div class="pfields">${field('ปริมาณงาน',j.id+'qty','number')}${field('หน่วย',j.id+'unit')}${allocationFields(j)}${['start','end','rev','revEnd'].map((k,i)=>field(['เริ่มแผน','จบแผน','เริ่มแผนปรับ','จบแผนปรับ'][i],j.id+k,'date')).join('')}${field('ความก้าวหน้าจริง (%)','progress'+j.id,'number',{['progress'+j.id]:latest('progress'+j.id)})}</div></article>`).join('')||'เลือกงวดจากทะเบียนก่อน'}
+function taskFields(){return jobs().map(j=>`<article><b>${value(j.id)} ${value(j.name)}</b><div class="pfields">${field('ปริมาณงาน',j.id+'qty','number')}${field('หน่วย',j.id+'unit')}${allocationFields(j)}${['start','end','rev','revEnd'].map((k,i)=>field(['เริ่มแผน','จบแผน','เริ่มแผนปรับ','จบแผนปรับ'][i],j.id+k,'date')).join('')}${field('ความก้าวหน้าจริง (%)','progress'+j.id,'number',{['progress'+j.id]:latest('progress'+j.id)})}</div></article>`).join('')||'เลือกงวดจากทะเบียนก่อน'}
 function workers(){
  const roster=DAYS[site]?.[date]||{},opts=jobs(),saved=day().people||{};
  const groups={};for(const id of Object.keys(roster)){const cat=G[id]||'';(groups[cat]??=[]).push(id)}
- return `<section class="pbox"><h2>จัดคนลงงาน</h2><button id="repeatCrew">ใช้การจัดคนเหมือนเมื่อวาน</button> <label>หน่วยงานสแกน <select id="scanSite">${Object.keys(DAYS).map(k=>`<option value="${value(k)}" ${site===k?'selected':''}>${value(SN[k]||k)}</option>`)}</select></label>${Object.keys(roster).length?'':'<p>ยังไม่มีรายชื่อของวันนี้ เลือกวันที่มีข้อมูล หรือเปิดหน้าตรวจสแกนหน้าเพื่อนำเข้า</p>'}${Object.entries(groups).map(([cat,ids])=>`<h3>${value(GS[cat]||'ยังไม่ระบุประเภท')}</h3>${ids.map(id=>{const a=saved[site+'|'+id]||{};return `<article><b>${value(R[site]?.[id]?.n||id)}</b> · ${value(id)}<div class="pfields">${['full','am','pm'].map((k,i)=>`<label>${['เต็มวัน','เช้า','บ่าย'][i]}<select data-person="${value(id)}" data-slot="${k}"><option value="">เลือกงาน</option>${opts.map(j=>`<option value="${j.id}" ${(k==='full'?(a.am===a.pm&&a.am===j.id):a[k]===j.id)?'selected':''}>${j.id} ${value(j.name)}</option>`).join('')}</select></label>`).join('')}</div></article>`}).join('')}`).join('')}<div class="pfields">${field('ค่าเครื่องจักรของหลังนี้วันนี้ (บาท)','machine','number',day())}<label><input type="checkbox" id="closed" ${day().closed?'checked':''}>ยืนยันค่าใช้จ่ายของวันนี้แล้ว</label></div></section>`
+ return `<section class="pbox"><h2>จัดคนลงงาน</h2><button id="repeatCrew">ใช้การจัดคนเหมือนเมื่อวาน</button> <label>หน่วยงานสแกน <select id="scanSite">${Object.keys(DAYS).map(k=>`<option value="${value(k)}" ${site===k?'selected':''}>${value(SN[k]||k)}</option>`)}</select></label>${Object.keys(roster).length?'':'<p>ยังไม่มีรายชื่อของวันนี้ เลือกวันที่มีข้อมูล หรือเปิดหน้าตรวจสแกนหน้าเพื่อนำเข้า</p>'}${Object.entries(groups).map(([cat,ids])=>`<h3>${value(GS[cat]||'ยังไม่ระบุประเภท')}</h3>${ids.map(id=>{const a=saved[site+'|'+id]||{};return `<article><b>${value(R[site]?.[id]?.n||id)}</b> · ${value(id)}<div class="pfields">${['full','am','pm'].map((k,i)=>`<label>${['เต็มวัน','เช้า','บ่าย'][i]}<select data-person="${value(id)}" data-slot="${k}"><option value="">เลือกงาน</option>${opts.map(j=>`<option value="${value(j.id)}" ${(k==='full'?(a.am===a.pm&&a.am===j.id):a[k]===j.id)?'selected':''}>${value(j.id)} ${value(j.name)}</option>`).join('')}</select></label>`).join('')}</div></article>`}).join('')}`).join('')}<div class="pfields">${field('ค่าเครื่องจักรของหลังนี้วันนี้ (บาท)','machine','number',day())}<label><input type="checkbox" id="closed" ${day().closed?'checked':''}>ยืนยันค่าใช้จ่ายของวันนี้แล้ว</label></div></section>`
 }
 function scheduled(settings,id,layer,d){
  const end=layer==='start'?'end':'revEnd';
@@ -969,9 +970,9 @@ function paintPlan(id,layer,a,b,remove){
 }
 
 function editWageBudget(n,focusJob){
- const g=p().contract.find(c=>c.n===n),dialog=document.createElement('dialog');
+ const g=p().contract.find(c=>String(c.n)===String(n)),dialog=document.createElement('dialog');
  dialog.className='crew-dialog wage-dialog';
- dialog.innerHTML=`<form><h2>จัดสรรค่าแรงงวด ${n}</h2><label>ค่าแรงต้นทุนงวด 100% (บาท)<input name="budget" type="number" step=".01" min="0" required value="${value(cfg()['budget'+n])}"></label><div class="crew-list">${g.jobs.map((name,i)=>{const id=n+'.'+(i+1);return `<label>${id} ${value(name)}<input data-job-pay="${id}" type="number" step=".01" min="0" value="${value(cfg()[id+'labor'])}"></label>`}).join('')}</div><p role="status"></p><footer><button type="button">ยกเลิก</button><button class="crew-save">บันทึกงบและการจัดสรร</button></footer></form>`;
+ dialog.innerHTML=`<form><h2>จัดสรรค่าแรง ${value(installmentLabel(n))}</h2><label>ค่าแรงต้นทุนงวด 100% (บาท)<input name="budget" type="number" step=".01" min="0" required value="${value(cfg()['budget'+n])}"></label><div class="crew-list">${g.jobs.map((name,i)=>{const id=n+'.'+(i+1);return `<label>${value(id)} ${value(name)}<input data-job-pay="${value(id)}" type="number" step=".01" min="0" value="${value(cfg()[id+'labor'])}"></label>`}).join('')}</div><p role="status"></p><footer><button type="button">ยกเลิก</button><button class="crew-save">บันทึกงบและการจัดสรร</button></footer></form>`;
  document.body.append(dialog);
  const form=dialog.querySelector('form'),budget=form.elements.budget,inputs=[...dialog.querySelectorAll('[data-job-pay]')];
  function balance(){
@@ -1073,9 +1074,9 @@ function timeline(){
  }
  function renderBand(ds){
  const cells=fn=>ds.map(d=>`<td class="day ${isOff(d)?'offday':''} ${d===c.claim?'due':''}">${fn(d)}</td>`).join('');
- return `<table class="timeline calendar ${ds.length>62?'dense':ds.length>31?'medium':''} ${mode==='crew'?'crew-mode':''}"><colgroup><col class="task-col"><col class="pay-col"><col class="qty-col"><col class="count-col"><col class="pct-col"><col span="${ds.length}"></colgroup><thead><tr><th rowspan="2" class="item">รายการงาน</th><th rowspan="2">ค่าแรงต้นทุน (บาท)</th><th rowspan="2">ปริมาณ</th><th rowspan="2">วันแผน</th><th rowspan="2">จริง %</th>${[...new Set(ds.map(d=>d.slice(0,7)))].map(m=>`<th colspan="${ds.filter(d=>d.startsWith(m)).length}">${MON[Number(m.slice(5))-1]} ${Number(m.slice(0,4))+543}</th>`).join('')}</tr><tr>${cells(d=>+d.slice(-2))}</tr></thead><tbody>${selected().map(g=>`<tr><th colspan="${ds.length+5}">งวด ${g.n} · มูลค่า ${money(g.price)} บาท · <button class="budget-link" data-wage-budget="${g.n}">งบค่าแรง ${money(c['budget'+g.n]||0)} บาท</button></th></tr>`+js.filter(j=>j.n===g.n).map(j=>`<tr data-job="${j.id}"><td>${j.id} ${value(j.name)}</td><td><button class="budget-link" aria-label="จัดสรรค่าแรงงาน ${j.id}" data-wage-budget="${g.n}" data-focus-job="${j.id}">${c[j.id+'labor']?money(c[j.id+'labor']):'—'}</button></td><td>${value(c[j.id+'qty']||'')} ${value(c[j.id+'unit'])}</td><td>${work(c[j.id+'start'],c[j.id+'end']).filter(d=>scheduled(c,j.id,'start',d)).length}</td><td>${value(latest('progress'+j.id)||'—')}</td>${cells(d=>`<span data-d="${d}" ${mode==='crew'?`role="button" tabindex="0" aria-label="จัดคน งาน ${j.id} วันที่ ${d}"`:''}>${[['start','end','#222'],['rev','revEnd','#246bd2']].map(([a,b,col])=>`<i style="border-top:3px solid ${scheduled(c,j.id,a,d)&&!isOff(d)?col:'transparent'}"></i>`).join('')}<i style="border-top:3px solid ${dailyJobs.get(d).has(j.id)?'#c31e2a':'transparent'}"></i>${dailyJobs.get(d).has(j.id)?wageMark(dailyJobs.get(d).get(j.id)):''}</span>`)}</tr>`).join('')).join('')}<tr class="daily-pay"><th colspan="5">ค่าแรงรวมทุกประเภทต่อวัน (งวดที่เลือก)</th>${cells(d=>d<=date&&p().days[d]?money(js.reduce((s,j)=>s+(dailyJobs.get(d).get(j.id)||0),0)):'')}</tr>${['ค่าแรงโครงสร้างต่อวัน','ค่าเครื่องจักรต่อวัน','ค่าแรงสะสมในช่วงที่แสดง','เครื่องจักรสะสมในช่วงที่แสดง'].map((label,i)=>`<tr class="daily-pay"><th colspan="5">${label}</th>${cells(d=>d<=date&&p().days[d]?money(i<2?(i?day(d).machine||0:costs(d)):Object.keys(p().days).filter(k=>k>=first&&k<=d).reduce((s,k)=>s+(i===2?costs(k):Number(day(k).machine||0)),0)):'')}</tr>`).join('')}</tbody></table>`;
+ return `<table class="timeline calendar ${ds.length>62?'dense':ds.length>31?'medium':''} ${mode==='crew'?'crew-mode':''}"><colgroup><col class="task-col"><col class="pay-col"><col class="qty-col"><col class="count-col"><col class="pct-col"><col span="${ds.length}"></colgroup><thead><tr><th rowspan="2" class="item">รายการงาน</th><th rowspan="2">ค่าแรงต้นทุน (บาท)</th><th rowspan="2">ปริมาณ</th><th rowspan="2">วันแผน</th><th rowspan="2">จริง %</th>${[...new Set(ds.map(d=>d.slice(0,7)))].map(m=>`<th colspan="${ds.filter(d=>d.startsWith(m)).length}">${MON[Number(m.slice(5))-1]} ${Number(m.slice(0,4))+543}</th>`).join('')}</tr><tr>${cells(d=>+d.slice(-2))}</tr></thead><tbody>${selected().map(g=>`<tr><th colspan="${ds.length+5}">${value(installmentLabel(g.n))} · มูลค่า ${money(g.price)} บาท · <button class="budget-link" data-wage-budget="${value(g.n)}">งบค่าแรง ${money(c['budget'+g.n]||0)} บาท</button></th></tr>`+js.filter(j=>j.n===g.n).map(j=>`<tr data-job="${value(j.id)}"><td>${value(j.id)} ${value(j.name)}</td><td><button class="budget-link" aria-label="จัดสรรค่าแรงงาน ${value(j.id)}" data-wage-budget="${value(g.n)}" data-focus-job="${value(j.id)}">${c[j.id+'labor']?money(c[j.id+'labor']):'—'}</button></td><td>${value(c[j.id+'qty']||'')} ${value(c[j.id+'unit'])}</td><td>${work(c[j.id+'start'],c[j.id+'end']).filter(d=>scheduled(c,j.id,'start',d)).length}</td><td>${value(latest('progress'+j.id)||'—')}</td>${cells(d=>`<span data-d="${d}" ${mode==='crew'?`role="button" tabindex="0" aria-label="จัดคน งาน ${value(j.id)} วันที่ ${d}"`:''}>${[['start','end','#222'],['rev','revEnd','#246bd2']].map(([a,b,col])=>`<i style="border-top:3px solid ${scheduled(c,j.id,a,d)&&!isOff(d)?col:'transparent'}"></i>`).join('')}<i style="border-top:3px solid ${dailyJobs.get(d).has(j.id)?'#c31e2a':'transparent'}"></i>${dailyJobs.get(d).has(j.id)?wageMark(dailyJobs.get(d).get(j.id)):''}</span>`)}</tr>`).join('')).join('')}<tr class="daily-pay"><th colspan="5">ค่าแรงรวมทุกประเภทต่อวัน (งวดที่เลือก)</th>${cells(d=>d<=date&&p().days[d]?money(js.reduce((s,j)=>s+(dailyJobs.get(d).get(j.id)||0),0)):'')}</tr>${['ค่าแรงโครงสร้างต่อวัน','ค่าเครื่องจักรต่อวัน','ค่าแรงสะสมในช่วงที่แสดง','เครื่องจักรสะสมในช่วงที่แสดง'].map((label,i)=>`<tr class="daily-pay"><th colspan="5">${label}</th>${cells(d=>d<=date&&p().days[d]?money(i<2?(i?day(d).machine||0:costs(d)):Object.keys(p().days).filter(k=>k>=first&&k<=d).reduce((s,k)=>s+(i===2?costs(k):Number(day(k).machine||0)),0)):'')}</tr>`).join('')}</tbody></table>`;
  }
- return `<section id="pReport" style="--pay-font:${Number(cfg().payFont)||9}px"><h2>แผนงานประจำงวด ${value(p().name)}</h2><p>งวด ${selected().map(c=>c.n).join(', ')||'—'} · รายงาน ณ ${date} · กำหนดเบิก ${value(c.claim||'—')}</p><p class="legend"><b>━ แผนเดิม</b><b style="color:#2563bb">━ แผนปรับ</b><b style="color:#c73131">━ ทำจริง</b><b style="color:#8165ac">┆ วันเบิก</b></p><div class="scrollplan">${bands.map(renderBand).join('')}</div><div class="report-foot">${summaryCosts(f)}<div class="report-forecast"><p>ต้นทุนสะสม ${f.actual===null?'—':money(f.actual)} บาท · เฉลี่ย 10 วันทำงาน ${f.avg===null?'รอยืนยัน '+(10-f.count)+' วัน':money(f.avg)+' บาท/วัน'} · เหลือ ${f.remaining} วันทำงาน</p><b>คาดการณ์ ณ วันเบิก ${f.estimate===null?'—':money(f.estimate)+' บาท'}　${f.budget>0&&f.estimate!==null?money(100*f.estimate/f.budget)+'%':''}</b></div>${reportStatus()}</div></section>`
+ return `<section id="pReport" style="--pay-font:${Number(cfg().payFont)||9}px"><h2>แผนงานประจำงวด ${value(p().name)}</h2><p>รายการงวด ${selected().map(c=>value(c.n)).join(', ')||'—'} · รายงาน ณ ${date} · กำหนดเบิก ${value(c.claim||'—')}</p><p class="legend"><b>━ แผนเดิม</b><b style="color:#2563bb">━ แผนปรับ</b><b style="color:#c73131">━ ทำจริง</b><b style="color:#8165ac">┆ วันเบิก</b></p><div class="scrollplan">${bands.map(renderBand).join('')}</div><div class="report-foot">${summaryCosts(f)}<div class="report-forecast"><p>ต้นทุนสะสม ${f.actual===null?'—':money(f.actual)} บาท · เฉลี่ย 10 วันทำงาน ${f.avg===null?'รอยืนยัน '+(10-f.count)+' วัน':money(f.avg)+' บาท/วัน'} · เหลือ ${f.remaining} วันทำงาน</p><b>คาดการณ์ ณ วันเบิก ${f.estimate===null?'—':money(f.estimate)+' บาท'}　${f.budget>0&&f.estimate!==null?money(100*f.estimate/f.budget)+'%':''}</b></div>${reportStatus()}</div></section>`
 }
 function draw(){
  if(!site||!DAYS[site])site=Object.keys(DAYS)[0]||'';
@@ -1086,13 +1087,14 @@ $('openScan').onclick=()=>{$('scanner').hidden=false;$('planner').hidden=true;$(
 $('openPlan').onclick=()=>{$('scanner').hidden=true;$('planner').hidden=false;$('openPlan').className='active';$('openScan').className='';draw()};
 $('planner').addEventListener('change',e=>{
  const el=e.target,share=el.dataset.share,k=share?share+'labor':el.dataset.field;
- if(k && (/labor$/.test(k)||/^budget\d+$/.test(k))){
-  const n=Number(k.match(/\d+/)[0]),budget=Number(cfg()['budget'+n]||0);
+ const isJobCost=k&&/\.\d+labor$/.test(k)&&el.dataset.costKind!=='budget';
+ if(k && (isJobCost||el.dataset.costKind==='budget')){
+  const n=isJobCost?k.slice(0,k.lastIndexOf('.')):k.slice('budget'.length),budget=Number(cfg()['budget'+n]||0);
   let amount=Number(el.value);
   if(share)amount=budget*amount/100;
   amount=Math.round(amount*100)/100;
   const previous=Number(cfg()[k]||0),used=allocated(n);
-  if(!el.checkValidity()||(k.endsWith('labor')?amount>previous&&Math.round((used-previous+amount)*100)>Math.round(budget*100):amount<used)){
+  if(!el.checkValidity()||(isJobCost?amount>previous&&Math.round((used-previous+amount)*100)>Math.round(budget*100):amount<used)){
    alert('ยอดจัดสรรรวมต้องไม่เกินค่าแรงต้นทุนของงวด');draw();return
   }
   cfg()[k]=el.value===''?'':String(amount);redraw();return
@@ -1101,8 +1103,9 @@ $('planner').addEventListener('change',e=>{
   const s=scoped(),part=Number(k.endsWith(':openingMachine')?el.value:s.openingMachine||0),total=Number(k.endsWith(':base')?el.value:s.base||0);
   if(part>total){alert('ค่าเครื่องจักรยกมาต้องไม่เกินยอดยกมารวม');draw();return}
  }
- if(k){if(!el.checkValidity()){el.reportValidity();return}if(k.startsWith('progress')&&+el.value>100){alert('ความก้าวหน้าอยู่ระหว่าง 0–100%');draw();return}
- const obj=k==='machine'||k.startsWith('progress')?editDay():cfg();obj[k]=el.value;if(k==='machine')editDay().closed=false;redraw();return}
+ const isProgress=k&&/^progress.*\.\d+$/.test(k);
+ if(k){if(!el.checkValidity()){el.reportValidity();return}if(isProgress&&+el.value>100){alert('ความก้าวหน้าอยู่ระหว่าง 0–100%');draw();return}
+ const obj=k==='machine'||isProgress?editDay():cfg();obj[k]=el.value;if(k==='machine')editDay().closed=false;redraw();return}
  if(el.dataset.use)cfg()['use'+el.dataset.use]=el.checked;
  else if(el.dataset.person){const id=el.dataset.person,slot=el.dataset.slot,key=site+'|'+id,record=editDay(),pay=rateOn(id,date),st=G[id]==='st'||GS[G[id]]==='โครงสร้าง';
  if(st&&pay==null&&el.value){alert('กรอกค่าแรงในหน้าสแกนก่อนจัดคนโครงสร้าง');draw();return}
@@ -1221,7 +1224,7 @@ document.addEventListener('pointerup',e=>{
 });
 document.addEventListener('pointercancel',()=>drag=null);
 $('planner').addEventListener('click',e=>{
- const el=e.target;if(el.dataset.statusKey){editStatus(el.dataset.statusKey);return}if(el.dataset.wageBudget){editWageBudget(Number(el.dataset.wageBudget),el.dataset.focusJob);return}if(el.dataset.tab!==undefined){tab=Number(el.dataset.tab);draw()}
+ const el=e.target;if(el.dataset.statusKey){editStatus(el.dataset.statusKey);return}if(el.dataset.wageBudget){editWageBudget(el.dataset.wageBudget,el.dataset.focusJob);return}if(el.dataset.tab!==undefined){tab=Number(el.dataset.tab);draw()}
  if(el.id==='newProject'){const name=prompt('ชื่อโครงการ / อาคาร');if(name?.trim()){projectId=crypto.randomUUID();project().name=name.trim();redraw()}}
 
  if(el.id==='repeatCrew'){
@@ -1239,9 +1242,45 @@ $('planner').addEventListener('click',e=>{
   if(count)current.closed=false;redraw();alert('คัดลอกแล้ว '+count+' ช่วงงาน')
  }
  if(el.id==='planPrint')window.print();
- if(el.id==='addContract')reviewContract('');
- if(el.id==='acceptContract'){try{const groups=parseContract($('draftContract').value);if(!groups.length)throw Error('กรุณาใส่เลขงวด มูลค่า และรายการงาน');if(groups.some(c=>p().contract.some(old=>old.n===c.n)))throw Error('เลขงวดซ้ำกับทะเบียนเดิม');p().contract.push(...groups);p().contract.sort((a,b)=>a.n-b.n);redraw()}catch(err){alert(err.message)}}
+ if(el.id==='addContract')showManualContract();
+ if(el.id==='acceptContract'){
+  try{saveContracts(parseContract($('draftContract').value))}
+  catch(err){alert(err.message)}
+ }
 });
+function saveContracts(groups){
+ if(!groups.length)throw Error('กรุณาใส่เลขงวด มูลค่า และรายการงาน');
+ const contract=p().contract;
+ if(groups.some(c=>contract.some(old=>String(old.n)===String(c.n))))throw Error('เลขหรือชื่องวดนี้มีในทะเบียนแล้ว');
+ contract.push(...groups);
+ contract.sort((a,b)=>String(a.n).localeCompare(String(b.n),'th',{numeric:true}));
+ redraw();
+}
+function showManualContract(){
+ const view=$('review');
+ view.innerHTML=`<form id="manualContract"><h3>เพิ่มงวดเอง</h3>
+ <div class="pfields">
+ <label>เลขหรือชื่องวด<input name="number" type="text" placeholder="12.1 หรือ งานเพิ่ม" required></label>
+ <label>มูลค่าเบิกงวด (บาท)<input name="price" type="number" min="0" step="0.01" required></label>
+ </div>
+ <label>รายการงาน (หนึ่งงานต่อบรรทัด)<textarea name="jobs" rows="4" required></textarea></label>
+ <div class="pactions"><button type="submit">บันทึกเข้าทะเบียน</button><button type="button" id="cancelContract">ยกเลิก</button></div>
+ <p role="status"></p></form>`;
+ const form=$('manualContract');
+ form.onsubmit=e=>{
+  e.preventDefault();
+  const {number,price,jobs}=form.elements;
+  const n=number.value.trim(),amount=Number(price.value);
+  const items=jobs.value.split('\n').map(line=>line.trim()).filter(Boolean);
+  const status=form.querySelector('[role=status]');
+  try{
+   if(!n||!Number.isFinite(amount)||!items.length)throw Error('กรุณาตรวจเลขงวด มูลค่า และกรอกรายการงานอย่างน้อยหนึ่งรายการ');
+   saveContracts([{n,price:amount,jobs:items,note:''}]);
+  }catch(err){status.textContent=err.message}
+ };
+ $('cancelContract').onclick=()=>{view.replaceChildren();$('addContract').focus()};
+ form.elements.number.focus();
+}
 function reviewContract(t){$('review').innerHTML=`<h3>ตรวจรายการก่อนบันทึก</h3><label>หัวงวดใช้รูปแบบ งวด 19 | 150000 ตามด้วยงานทีละบรรทัด<textarea id="draftContract" style="min-height:190px">${value(t)}</textarea></label><button id="acceptContract">บันทึกเข้าทะเบียน</button>`}
 function parseContract(t){const groups=[];for(const line of t.split('\n').map(s=>s.trim()).filter(Boolean)){const m=line.match(/^งวด\s*(\d+)\s*\|\s*([\d,.]+)$/);if(m){groups.push({n:+m[1],price:Number(m[2].replace(/,/g,'')),jobs:[],note:''});continue}if(!groups.length)throw Error('ตรวจหัวงวดบรรทัดแรก');const g=groups.at(-1);if(line.includes('มูลค่างานที่เทียบเท่า'))g.note=line;else g.jobs.push(line)}if(groups.some(g=>!g.n||!Number.isFinite(g.price)||!g.jobs.length)||new Set(groups.map(g=>g.n)).size!==groups.length)throw Error('ตรวจเลขงวด จำนวนเงิน และรายการงาน');return groups}
 async function readContract(file){
