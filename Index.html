@@ -141,7 +141,98 @@ button,select,input{font:inherit;color:inherit}
 .pg .ok{color:#1F7A4D}.pg .wn{color:#9A6700}.pg .ms{color:#B3261E}.pg .md{color:#2F55A4}
 .pg .ft{position:absolute;left:44px;right:44px;bottom:26px;display:flex;justify-content:space-between;color:#777;font-size:11px}
 </style>
-<link rel="stylesheet" href="planner.css"></head>
+<style>
+#modules,.pnav,.pfields,.pactions{display:flex;align-items:center;flex-wrap:wrap;gap:9px}#modules{border-top:5px solid #edb400;padding:12px 0;border-bottom:1px solid var(--ln)}#modules strong{letter-spacing:.13em;margin-right:8px}#modules a{margin-left:auto;color:var(--ink)}#planner h1{font-size:clamp(25px,4vw,39px);margin:18px 0 8px}#planner h2{font-size:21px;margin:14px 0}#planner button,#modules button{cursor:pointer;border:1px solid var(--ln);border-radius:7px;padding:8px 13px;background:var(--sf);color:var(--ink);font:inherit}#planner button.active,#modules button.active{background:#263e34;color:white}.pnav{margin:16px 0}.pbox{padding:16px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;margin:10px 0}.pfields{align-items:end}.pfields label,#planner article label{display:grid;gap:2px;font-size:13px}#planner input,#planner select,#planner textarea{max-width:100%;padding:6px;border:1px solid var(--ln);border-radius:5px;background:var(--sf);color:var(--ink);font:inherit}#planner textarea{width:100%;min-height:64px}#planner input[type=number]{width:118px}#planner article{border-top:1px solid var(--ln);padding:12px 0}#planner summary{cursor:pointer;font-weight:600}.scrollplan{overflow:auto}.timeline{border-collapse:collapse;background:white;color:#181818;font-size:11px}.timeline td,.timeline th{border:1px solid #b9bcb9;padding:3px;white-space:normal}.timeline td.day{min-width:16px;padding:0;user-select:none;touch-action:pan-y}.timeline .item{min-width:200px}.day i{display:block;height:4px;margin:2px 0}.offday{background:#eee}.due{border-left:2px dashed #8165ac!important}.pnotes{white-space:pre-wrap}.legend{font-size:13px}.legend b{margin-right:10px}#planner small{color:var(--mut)}@page{size:A3 landscape;margin:8mm}@media print{body{background:white!important;color:black!important}.wrap{max-width:none!important;padding:0!important;display:block!important}#modules,#scanner,#bk,#pdfroot,#planner>:not(#pReport),.hideprint{display:none!important}#planner,#pReport,.scrollplan{display:block!important;overflow:visible!important}.timeline{width:100%;font-size:8px;table-layout:fixed}.timeline td.day{min-width:0}.timeline .item{min-width:0;width:18%}.timeline td,.timeline th{padding:1px}.day i{height:2px;margin:1px 0}#pReport{color:black;background:white}*{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+.calendar{table-layout:fixed;width:var(--calendar-width);font-variant-numeric:tabular-nums}
+.calendar .task-col{width:210px}.calendar .pay-col{width:72px}.calendar .qty-col{width:66px}.calendar .count-col,.calendar .pct-col{width:46px}
+.calendar .day{text-align:center;vertical-align:middle;overflow-wrap:anywhere}
+.calendar thead .day{height:27px;font-weight:600;white-space:nowrap}
+.calendar tbody tr[data-job] .day{cursor:crosshair}
+.calendar tr[data-job] .day:hover{background:#eff5e9}
+.calendar [data-d]{display:block}
+@media print{
+ .calendar{width:100%}.calendar .task-col{width:16%}.calendar .pay-col{width:5%}.calendar .qty-col{width:4%}.calendar .count-col,.calendar .pct-col{width:2.8%}
+ .calendar thead .day{height:auto;font-size:7px}.calendar .item{width:auto}
+}
+.cost-summary{margin:12px 0;border-collapse:collapse;width:min(100%,560px);font-size:14px;color:#182724;background:#e3f4fa;break-inside:avoid;font-variant-numeric:tabular-nums}
+.cost-summary th,.cost-summary td{border:1px solid #738380;padding:4px 10px}.cost-summary th{text-align:left}.cost-summary td:last-child{text-align:right;font-weight:600}.cost-summary .budget-total{background:#c4e9f6}.cost-summary .actual-labor{background:#fbe3d2}.cost-summary .actual-machine{background:#f6dbea}.cost-summary .cost-ratio{background:#daefcb}
+@media print{.cost-summary{font-size:9px;width:45%;margin:4px 0}.cost-summary th,.cost-summary td{padding:1px 4px}}
+.calendar.crew-mode tr[data-job] .day{cursor:pointer;touch-action:auto}
+.crew-dialog{padding:18px;border:1px solid var(--ln);border-radius:12px;background:var(--sf);color:var(--ink);width:min(490px,94vw);max-height:85dvh;box-shadow:0 8px 40px #0003;margin:auto 2vw auto auto}
+.crew-dialog::backdrop{background:#15231c35}.crew-dialog header{margin:0 0 10px}.crew-dialog h2{font-size:19px;margin:4px 0}.crew-dialog header button{float:right}.crew-dialog small{color:var(--mut)}.crew-list{max-height:48dvh;overflow:auto}.crew-list h3{font-size:14px;background:var(--bg);padding:4px 8px}.crew-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--ln)}.crew-row small{display:block}.crew-row label{cursor:pointer}.crew-dialog footer{display:flex;justify-content:flex-end;gap:8px;padding-top:12px}.crew-dialog button,.crew-dialog select{font:inherit;padding:5px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--sf);color:var(--ink)}.crew-dialog .crew-save{background:#263e34;color:white}
+@media screen{
+ .wrap:has(#pReport):has(#planner:not([hidden])){max-width:none}
+ .scrollplan{overflow:visible}
+ .calendar{width:100%;margin-bottom:12px}
+ .calendar .task-col{width:15%}.calendar .pay-col{width:5%}.calendar .qty-col{width:4%}.calendar .count-col,.calendar .pct-col{width:3%}
+ .calendar td,.calendar th{overflow-wrap:anywhere}
+ .calendar td.day,.calendar .item{min-width:0}
+ .calendar.dense thead .day{font-size:clamp(7px,.64vw,10px)}.calendar.medium thead .day{font-size:clamp(9px,.85vw,11px)}
+ @media(max-width:940px){.calendar .task-col{width:25%}.calendar .pay-col{width:10%}.calendar .qty-col{width:7%}.calendar .count-col,.calendar .pct-col{width:6%}.calendar [data-d]{padding:4px 0}}
+}
+#planner .budget-link{padding:0 2px;border:0;border-radius:2px;color:#165943;background:transparent;font:inherit;text-decoration:underline dotted;max-width:100%;overflow-wrap:anywhere}
+.calendar .wage-mark{font-size:var(--pay-font);display:block;width:100%;height:1.3em;margin:auto;fill:#9b2927}
+.calendar .daily-pay td{writing-mode:vertical-rl;white-space:nowrap;font-size:var(--pay-font);line-height:1.2;padding:4px 0;text-align:center}
+.wage-dialog label{display:grid;grid-template-columns:1fr 110px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--ln)}
+.wage-dialog input{width:100%;font:inherit;padding:4px}.wage-dialog button:disabled{opacity:.45}
+@media print{#planner .budget-link{text-decoration:none;color:inherit}.calendar .wage-mark,.calendar .daily-pay td{font-size:min(var(--pay-font),8px)}}
+@media print{
+ #planner #pReport>h2{margin:0 0 1mm;text-align:center;font-size:13pt;line-height:1.2}
+ #pReport>p{margin:0 0 1mm;font-size:8pt;line-height:1.25}
+ #pReport .calendar{font-size:8pt;line-height:1.18}
+ #pReport .calendar tr{break-inside:avoid}
+ #pReport .calendar tr[data-job]>td:first-child{padding:1mm}
+ #pReport .calendar tr[data-job]>td:nth-child(n+2):nth-child(-n+5){text-align:center}
+ #pReport .calendar tr:not([data-job])>th[colspan]:only-child{text-align:left;background:#f0f3f1;font-size:8pt;padding:.55mm 1mm}
+ #pReport .report-foot{display:grid;grid-template-columns:26% minmax(0,26%) minmax(0,1fr);gap:3mm;align-items:start;margin-top:1mm;font-size:6.5pt;line-height:1.2}
+ #pReport .cost-summary{width:100%;margin:0;font-size:6pt;line-height:1.15}
+ #pReport .cost-summary th,#pReport .cost-summary td{padding:.28mm .8mm}
+ #pReport .report-forecast{grid-column:3;grid-row:1}
+ #pReport .report-forecast p,#pReport .report-explanation h3{margin:0 0 .7mm;font-size:inherit}
+ #pReport .report-explanation{grid-column:2;grid-row:1;overflow-wrap:anywhere}
+ #pReport .report-explanation .timeline{font-size:6pt}
+ #pReport .empty-note{display:none}
+}
+
+.wage-status{
+ width:min(100%,600px);table-layout:fixed;border-collapse:collapse;
+ color:#19251f;font-size:14px;line-height:1.35;font-variant-numeric:tabular-nums;
+ break-inside:avoid
+}
+.wage-status th,.wage-status td{
+ padding:4px 6px;border:1px solid #434a46;text-align:center;vertical-align:middle;
+ overflow-wrap:anywhere
+}
+.wage-status .status-side{width:27%;background:#fae6d6;font-weight:600}
+.wage-status tr>*:last-child{width:24%}
+.wage-status .status-budget{background:#fff2cc}
+.wage-status .status-spent{background:#dae4f4}
+.wage-status .status-percent{background:#e2efda}
+.wage-status .status-meta,.wage-status .status-note{background:#ebebeb}
+#planner .wage-status .status-cell{
+ display:block;width:100%;padding:3px 1px;border:0;border-radius:2px;
+ background:transparent;color:inherit;font:inherit;font-weight:600;
+ overflow-wrap:anywhere;text-decoration:underline dotted #677a69;text-underline-offset:3px
+}
+#planner .wage-status .status-cell:hover{background:#ffffff75}
+#planner .wage-status .status-cell:focus-visible{outline:2px solid #165943;outline-offset:1px}
+@media screen and (max-width:520px){
+ .wage-status{font-size:12px}
+ .wage-status th,.wage-status td{padding:2px 3px}
+ #planner .wage-status .status-cell{min-height:36px}
+}
+@media print{
+ #pReport .wage-status{width:100%;font-size:6pt;line-height:1.15}
+ #pReport .wage-status th,#pReport .wage-status td{padding:.35mm .6mm;border-width:.18mm}
+ #planner .wage-status .status-cell{padding:0;text-decoration:none}
+}
+.status-editor{width:min(670px,96vw);margin:auto}
+.status-editor .wage-status{width:100%}
+.status-editor input{width:100%;min-width:0;box-sizing:border-box;padding:4px 2px;font:inherit;border:1px solid #87978f;border-radius:3px;background:white;color:#19251f;text-align:center}
+.status-editor input:focus{outline:2px solid #165943}
+@media(max-width:520px){.status-editor{padding:10px}.status-editor input[type=date]{font-size:11px}.status-editor .wage-status tr>*:last-child{width:32%}}
+
+</style></head>
 <body>
 <div class="wrap">
 <nav id="modules"><strong>TMAN</strong><button id="openPlan">วางแผนงวดงาน</button><button id="openScan">ตรวจสแกนหน้า</button><a href="#bk">สำรองข้อมูล</a></nav><main id="planner"></main><div id="scanner" hidden><header>
@@ -763,5 +854,417 @@ $('bkprev').addEventListener('click',e=>{
 });
 histRender();
 </script>
-<script src="installments.js"></script><script src="planner.js"></script></body>
+<script>
+// เงื่อนไขส่งงานตามสัญญาอาคารพักอาศัย A และ A–MANCAVE
+const contractRows = [
+[1444444.44,'เสาเข็ม แล้วเสร็จ'],
+[1888888.89,'โครงสร้างฐานราก ค.ส.ล. แล้วเสร็จ|โครงสร้างสระว่ายน้ำ 50%'],
+[4777777.78,'โครงสร้างสระว่ายน้ำ แล้วเสร็จ|โครงสร้างเสาตอม่อและคาน + พื้น ค.ส.ล. ชั้น 1 แล้วเสร็จ|ระบบท่อสุขาภิบาลใต้โครงสร้างอาคาร ชั้น 1 แล้วเสร็จ|ระบบสุขาภิบาลภายนอกอาคาร 20%'],
+[2777777.78,'โครงสร้างเสา ชั้น 1 และคาน + พื้น ค.ส.ล. ชั้น 2 แล้วเสร็จ'],
+[2111111.11,'โครงสร้างเสา ชั้น 2 และคาน + พื้น ค.ส.ล. ชั้นหลังคา แล้วเสร็จ'],
+[3111111.11,'โครงสร้างหลังคาเหล็กรูปพรรณ 50%|โครงสร้างบันได ค.ส.ล. 50%|เสาเอ็นทับหลัง + ก่ออิฐ (ยกเว้นช่องชาร์ป) 20%'],
+[3222222.22,'โครงสร้างหลังคาเหล็กรูปพรรณ แล้วเสร็จ|โครงสร้างบันได ค.ส.ล. แล้วเสร็จ|เสาเอ็นทับหลัง + ก่ออิฐ (ยกเว้นช่องชาร์ป) 40%|ระบบท่อไฟฟ้าภายในผนังอาคาร 30%'],
+[1666666.67,'เสาเอ็นทับหลัง + ก่ออิฐ (ยกเว้นช่องชาร์ป) 70%|ฉาบปูน (ยกเว้นช่องชาร์ป) 20%|ระบบท่อไฟฟ้าภายในผนังอาคาร 60%|ระบบท่อสุขาภิบาลภายในอาคาร 10%'],
+[1777777.78,'เสาเอ็นทับหลัง + ก่ออิฐ (ยกเว้นช่องชาร์ป) แล้วเสร็จ|ฉาบปูน (ยกเว้นช่องชาร์ป) 40%|ระบบท่อไฟฟ้าภายในผนังอาคาร แล้วเสร็จ|ระบบท่อสุขาภิบาลภายในอาคาร 30%'],
+[1333333.33,'ฉาบปูน (ยกเว้นช่องชาร์ป) 60%|ระบบท่อไฟฟ้าบนฝ้าเพดาน 30%|ระบบท่อสุขาภิบาลภายในอาคาร 50%|ระบบท่อน้ำยาและสายงานระบบปรับอากาศ 20%'],
+[2444444.44,'ฉาบปูน (ยกเว้นช่องชาร์ป) 90%|ปูนทรายปรับระดับ 40%|ประตู-หน้าต่างภายนอกอาคารและส่วนบริการ 10%|ระบบท่อไฟฟ้าบนฝ้าเพดาน 60%|ระบบท่อสุขาภิบาลภายในอาคาร 70%|ระบบท่อน้ำยาและสายงานระบบปรับอากาศ 50%'],
+[3555555.56,'ฉาบปูน (ยกเว้นช่องชาร์ป) แล้วเสร็จ|ผนังตกแต่งภายนอกและส่วนบริการ 20%|ปูนทรายปรับระดับ 90%|ประตู-หน้าต่างภายนอกอาคารและส่วนบริการ 50%|งานเบ็ดเตล็ดตามแบบสถาปัตย์ 10%|ระบบท่อไฟฟ้าบนฝ้าเพดาน แล้วเสร็จ|ร้อยสายระบบไฟฟ้าสื่อสารภายในอาคาร 10%|ระบบท่อน้ำยาและสายงานระบบปรับอากาศ แล้วเสร็จ|ติดตั้ง FCU + ท่อ Duct ระบบปรับอากาศ 20%'],
+[3111111.11,'ผนังตกแต่งภายนอกและส่วนบริการ 40%|ฝ้าเพดานตกแต่งภายนอกอาคารและส่วนบริการ 20%|ปูนทรายปรับระดับ แล้วเสร็จ|ประตู-หน้าต่างภายนอกอาคารและส่วนบริการ 80%|งานเบ็ดเตล็ดตามแบบสถาปัตย์ 30%|ทารองพื้นพลาสติกภายในอาคาร 10%|ทาสีพลาสติกภายนอกอาคาร 10%|ร้อยสายระบบไฟฟ้าสื่อสารภายในอาคาร 50%|ระบบท่อสุขาภิบาลภายในอาคาร 90%|ติดตั้ง FCU + ท่อ Duct ระบบปรับอากาศ 60%'],
+[3777777.78,'ผนังตกแต่งภายนอกและส่วนบริการ 70%|ฝ้าเพดานตกแต่งภายนอกอาคารและส่วนบริการ 50%|พื้นตกแต่งภายนอกอาคารและส่วนบริการ 30%|ประตู-หน้าต่างภายนอกอาคารและส่วนบริการ แล้วเสร็จ|งานเบ็ดเตล็ดตามแบบสถาปัตย์ 50%|ทารองพื้นพลาสติกภายในอาคาร 30%|ทาสีพลาสติกภายนอกอาคาร 30%|ร้อยสายระบบไฟฟ้าสื่อสารภายในอาคาร 90%|ระบบท่อสุขาภิบาลภายในอาคาร แล้วเสร็จ|ติดตั้ง FCU + ท่อ Duct ระบบปรับอากาศ แล้วเสร็จ'],
+[3222222.22,'ผนังตกแต่งภายนอกและส่วนบริการ แล้วเสร็จ|ฝ้าเพดานตกแต่งภายนอกอาคารและส่วนบริการ 80%|พื้นตกแต่งภายนอกอาคารและส่วนบริการ 60%|ตกแต่งผิวบันไดและราวบันได 20%|งานเบ็ดเตล็ดตามแบบสถาปัตย์ 70%|ทารองพื้นพลาสติกภายในอาคาร 50%|ทาสีพลาสติกภายนอกอาคาร 50%|ร้อยสายระบบไฟฟ้าสื่อสารภายในอาคาร แล้วเสร็จ|ติดตั้งตู้ MDB, LB (ตู้ย่อย) 50%|ระบบสุขาภิบาลภายนอกอาคาร 70%'],
+[2555555.56,'ฝ้าเพดานตกแต่งภายนอกอาคารและส่วนบริการ แล้วเสร็จ|พื้นตกแต่งภายนอกอาคารและส่วนบริการ 90%|ตกแต่งผิวบันไดและราวบันได 90%|งานเบ็ดเตล็ดตามแบบสถาปัตย์ 90%|ทารองพื้นพลาสติกภายในอาคาร 70%|ทาสีพลาสติกภายนอกอาคาร 70%|ทาสีชนิดพิเศษอื่น ๆ 50%|ระบบท่อและร้อยสายภายนอกอาคาร แล้วเสร็จ|ติดตั้งตู้ MDB, LB (ตู้ย่อย) แล้วเสร็จ|ระบบสุขาภิบาลภายนอกอาคาร แล้วเสร็จ'],
+[2333333.33,'พื้นตกแต่งภายนอกอาคารและส่วนบริการ แล้วเสร็จ|ตกแต่งผิวบันไดและราวบันได แล้วเสร็จ|งานเบ็ดเตล็ดตามแบบสถาปัตย์ แล้วเสร็จ|ทารองพื้นพลาสติกภายในอาคาร 80%|ทาสีพลาสติกภายนอกอาคาร 80%|ทาสีชนิดพิเศษอื่น ๆ แล้วเสร็จ|ติดตั้งสวิตช์ไฟฟ้าและเต้ารับไฟฟ้า 50%|ติดตั้งดวงโคมและอุปกรณ์ 50%|ติดตั้งปั๊มน้ำและสุขภัณฑ์และอุปกรณ์ 50%|ติดตั้ง CDU & SAG & RAG ระบบปรับอากาศ 50%'],
+[2444444.44,'ทารองพื้นพลาสติกภายในอาคาร แล้วเสร็จ|ทาสีพลาสติกภายนอกอาคาร แล้วเสร็จ|ติดตั้งสวิตช์ไฟฟ้าและเต้ารับไฟฟ้า แล้วเสร็จ|ติดตั้งดวงโคมและอุปกรณ์ แล้วเสร็จ|ติดตั้งปั๊มน้ำและสุขภัณฑ์และอุปกรณ์ แล้วเสร็จ|ติดตั้ง CDU & SAG & RAG ระบบปรับอากาศ แล้วเสร็จ']
+];
+
+</script><script>
+
+const planKey='tman-plan-1';
+let planStore=JSON.parse(localStorage.getItem(planKey)||'null')||{v:1,projects:{}};
+const today=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+let projectId=Object.keys(planStore.projects)[0]||'A',date=today,tab=0,site='',mode='crew',month=today.slice(0,7),months=1;
+const storePlan=()=>{try{localStorage.setItem(planKey,JSON.stringify(planStore))}catch{alert('พื้นที่บันทึกเต็ม กรุณาส่งออก JSON ก่อนปิดแอป')}};
+function restorePlan(data,replace){
+ if(data.v!==1||!data.projects||!Object.values(data.projects).every(p=>p&&Array.isArray(p.contract)&&p.days&&p.settings)){alert('รูปแบบข้อมูลแผนไม่ถูกต้อง');return false}
+ const projects=replace?{}:{...planStore.projects};
+ for(const [id,p] of Object.entries(data.projects)){const old=projects[id];projects[id]=old?{...p,days:{...old.days,...p.days},notes:{...old.notes,...p.notes}}:p}
+ planStore={v:1,projects};projectId=Object.keys(projects)[0]||'A';storePlan();setTimeout(draw);return true
+}
+function project(){return planStore.projects[projectId]??=( {name:projectId==='A'?'TMAN · อาคาร A และ A–MANCAVE':projectId,contract:projectId==='A'?contractRows.map(([price,list],i)=>({n:i+1,price,jobs:list.split('|'),note:i<17?'หรือมูลค่างานที่เทียบเท่า':''})):[],settings:{},days:{},notes:{}} )}
+const p=()=>project(), day=(d=date)=>p().days[d]||{}, editDay=()=>p().days[date]??={}, cfg=()=>p().settings;
+const shift=(d,n)=>new Date(Date.parse(d+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
+const dates=(a,b)=>{const r=[];if(a&&b)for(let d=a;d<=b;d=shift(d,1))r.push(d);return r};
+const selected=()=>p().contract.filter(c=>cfg()['use'+c.n]);
+const jobs=()=>selected().flatMap(c=>c.jobs.map((name,i)=>({id:c.n+'.'+(i+1),name,n:c.n})));
+function scopeKey(){return 'set:'+selected().map(c=>c.n).join(',')+':'}
+function scoped(){const s=cfg(),prefix=scopeKey();return Object.fromEntries(['base','cut','claim','openingMachine','adjustment'].map(k=>[k,s[prefix+k]]))}
+const isOff=d=>(cfg().holidays||'').split(/[\s,]+/).includes(d);
+const work=(a,b)=>dates(a,b).filter(d=>!isOff(d));
+const value=(v)=>esc(v??''), money=n=>Number(n).toLocaleString('th-TH',{maximumFractionDigits:2});
+function field(label,key,type='text',obj=cfg()){return `<label>${label}<input data-field="${value(key)}" type="${type}" ${type==='number'?((key.endsWith(':adjustment')?'':'min="0" ')+'step="any"'):''} value="${value(obj[key])}"></label>`}
+function assignments(d){return Object.values(day(d).people||{})}
+function costs(d){const ns=new Set(selected().map(c=>String(c.n)));return assignments(d).reduce((s,a)=>s+['am','pm'].filter(k=>a[k]&&ns.has(a[k].split('.')[0])&&a.struct).length*a.half,0)}
+
+function allocated(n){
+ const contract=p().contract.find(c=>c.n===n);
+ return contract.jobs.reduce((sum,_,i)=>sum+Math.round(Number(cfg()[n+'.'+(i+1)+'labor']||0)*100),0)/100;
+}
+function allocationFields(j){
+ const budget=Number(cfg()['budget'+j.n]||0),used=allocated(j.n);
+ const help=budget>0?`งวด ${j.n} · ต้นทุน ${money(budget)} บาท · คงเหลือจัดสรร ${money(budget-used)} บาท`:`กรอกค่าแรงงวด ${j.n} (100%) ก่อนจัดสรร`;
+ const disabled=budget<=0?'disabled':'',amount=cfg()[j.id+'labor'];
+ return `<label>ค่าแรงที่จัดสรร (บาท)<input type="number" step="0.01" min="0" data-field="${j.id}labor" value="${value(amount)}" ${disabled}></label>
+ <label>หรือ % ของค่าแรงงวด<input type="number" min="0" max="100" step="any" data-share="${j.id}" value="${budget&&amount!==undefined&&amount!==''?Number((100*amount/budget).toFixed(4)):''}" ${disabled}></label><small>${help}</small>`;
+}
+function summaryCosts(f){
+ const baht=n=>n==null?'—':Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const row=(label,amount,cls='',pct=false)=>`<tr class="${cls}"><th>${label}</th><td>${pct?'%':'THB'}</td><td>${baht(amount)}</td></tr>`;
+ return `<table class="cost-summary"><tbody>${row('ค่าแรงต้นทุนรวม (100%)',f.budget,'budget-total')}
+ ${row('ค่าแรงงานเพิ่ม–ลด',f.adjustment)}
+ ${selected().map(c=>row(`ค่าแรงงวดที่ ${c.n} (100%)`,Number(cfg()['budget'+c.n]||0))).join('')}
+ ${row('ค่าแรงสะสม ณ ปัจจุบัน',f.labor,'actual-labor')}
+ ${row('ค่าเครื่องจักรสะสม ณ ปัจจุบัน',f.machine,'actual-machine')}
+ ${row('สรุปค่าแรง ณ ปัจจุบัน',f.budget>0&&f.actual!==null?100*f.actual/f.budget:null,'cost-ratio',true)}</tbody></table>`;
+}
+
+function forecast(d){
+ const set=scoped(),cut=set.cut,base=Number(set.base||0),claim=set.claim;
+ const recent=[];for(let k=d;recent.length<10;k=shift(k,-1))if(!isOff(k))recent.push(k);
+ const daily=k=>costs(k)+Number(day(k).machine||0);
+ const confirmed=recent.filter(k=>day(k).closed);
+ const avg=confirmed.length===10?recent.reduce((s,k)=>s+daily(k),0)/10:null;
+ const afterCut=Object.keys(p().days).filter(k=>k<=d&&(!cut||k>cut));
+ const known=!cut||d>=cut,openingMachine=Number(set.openingMachine||0);
+ const labor=known?base-openingMachine+afterCut.reduce((s,k)=>s+costs(k),0):null;
+ const machine=known?openingMachine+afterCut.reduce((s,k)=>s+Number(day(k).machine||0),0):null;
+ const actual=known?labor+machine:null;
+ const remaining=claim?work(shift(d,1),claim).length:0;
+ const estimate=claim&&claim>=d&&(!cut||cut<=d)&&(avg!==null||!remaining)?actual+avg*remaining:null;
+ const adjustment=Number(set.adjustment||0);
+ const budget=adjustment+selected().reduce((s,c)=>s+Number(cfg()['budget'+c.n]||0),0);
+ return {actual,labor,machine,adjustment,avg,remaining,estimate,budget,count:confirmed.length}
+}
+function setup(){return `<section class="pbox"><h2>ทะเบียนงวดตามสัญญา</h2><div class="pactions"><button id="addContract">เพิ่มงวดเอง</button><label>นำเข้า PDF <input id="contractFile" type="file" accept="application/pdf"></label></div><div id="review"></div>${p().contract.map(c=>`<details><summary><input data-use="${c.n}" type="checkbox" ${cfg()['use'+c.n]?'checked':''}> งวด ${c.n} · ${money(c.price)} บาท · ${c.jobs.length} รายการ</summary><p>${c.jobs.map(value).join('<br>')}</p><small>${value(c.note)}</small><div class="pfields">${field('ค่าแรงต้นทุนงวดที่ '+c.n+' (100%) บาท','budget'+c.n,'number')}</div></details>`).join('')}</section><section class="pbox"><h2>ตั้งค่าชุดงวดที่เลือก</h2><div class="pfields">${field('ต้นทุนใช้จริงยกมารวมแรงและเครื่องจักร (บาท)',scopeKey()+'base','number')}${field('ค่าเครื่องจักรที่รวมอยู่ในยอดยกมา (บาท)',scopeKey()+'openingMachine','number')}${field('ค่าแรงงานเพิ่ม–ลดตามงวดที่เลือก (บาท)',scopeKey()+'adjustment','number')}${field('ตัดยอดถึงวันที่',scopeKey()+'cut','date')}${field('วันเบิกงวด',scopeKey()+'claim','date')}${field('วันหยุด (YYYY-MM-DD คั่นด้วยช่องว่าง)','holidays')}</div></section>`}
+function latest(key,d=date){for(const k of Object.keys(p().days).filter(k=>k<=d).sort().reverse()){if(day(k)[key]!==undefined&&day(k)[key]!=='')return day(k)[key]}return ''}
+function taskFields(){return jobs().map(j=>`<article><b>${j.id} ${value(j.name)}</b><div class="pfields">${field('ปริมาณงาน',j.id+'qty','number')}${field('หน่วย',j.id+'unit')}${allocationFields(j)}${['start','end','rev','revEnd'].map((k,i)=>field(['เริ่มแผน','จบแผน','เริ่มแผนปรับ','จบแผนปรับ'][i],j.id+k,'date')).join('')}${field('ความก้าวหน้าจริง (%)','progress'+j.id,'number',{['progress'+j.id]:latest('progress'+j.id)})}</div></article>`).join('')||'เลือกงวดจากทะเบียนก่อน'}
+function workers(){
+ const roster=DAYS[site]?.[date]||{},opts=jobs(),saved=day().people||{};
+ const groups={};for(const id of Object.keys(roster)){const cat=G[id]||'';(groups[cat]??=[]).push(id)}
+ return `<section class="pbox"><h2>จัดคนลงงาน</h2><button id="repeatCrew">ใช้การจัดคนเหมือนเมื่อวาน</button> <label>หน่วยงานสแกน <select id="scanSite">${Object.keys(DAYS).map(k=>`<option value="${value(k)}" ${site===k?'selected':''}>${value(SN[k]||k)}</option>`)}</select></label>${Object.keys(roster).length?'':'<p>ยังไม่มีรายชื่อของวันนี้ เลือกวันที่มีข้อมูล หรือเปิดหน้าตรวจสแกนหน้าเพื่อนำเข้า</p>'}${Object.entries(groups).map(([cat,ids])=>`<h3>${value(GS[cat]||'ยังไม่ระบุประเภท')}</h3>${ids.map(id=>{const a=saved[site+'|'+id]||{};return `<article><b>${value(R[site]?.[id]?.n||id)}</b> · ${value(id)}<div class="pfields">${['full','am','pm'].map((k,i)=>`<label>${['เต็มวัน','เช้า','บ่าย'][i]}<select data-person="${value(id)}" data-slot="${k}"><option value="">เลือกงาน</option>${opts.map(j=>`<option value="${j.id}" ${(k==='full'?(a.am===a.pm&&a.am===j.id):a[k]===j.id)?'selected':''}>${j.id} ${value(j.name)}</option>`).join('')}</select></label>`).join('')}</div></article>`}).join('')}`).join('')}<div class="pfields">${field('ค่าเครื่องจักรของหลังนี้วันนี้ (บาท)','machine','number',day())}<label><input type="checkbox" id="closed" ${day().closed?'checked':''}>ยืนยันค่าใช้จ่ายของวันนี้แล้ว</label></div></section>`
+}
+function scheduled(settings,id,layer,d){
+ const end=layer==='start'?'end':'revEnd';
+ return d>=settings[id+layer] && d<=settings[id+end] &&
+  !(settings[id+layer+'Gaps']||[]).includes(d);
+}
+function paintPlan(id,layer,a,b,remove){
+ const settings=cfg(),end=layer==='start'?'end':'revEnd';
+ const existing=dates(settings[id+layer],settings[id+end]);
+ const days=new Set(existing.filter(d=>scheduled(settings,id,layer,d)));
+ for(const d of dates(a,b)){if(remove)days.delete(d);else days.add(d)}
+ const sorted=[...days].sort();
+ settings[id+layer]=sorted[0]||'';
+ settings[id+end]=sorted.at(-1)||'';
+ settings[id+layer+'Gaps']=dates(settings[id+layer],settings[id+end]).filter(d=>!days.has(d));
+}
+
+function editWageBudget(n,focusJob){
+ const g=p().contract.find(c=>c.n===n),dialog=document.createElement('dialog');
+ dialog.className='crew-dialog wage-dialog';
+ dialog.innerHTML=`<form><h2>จัดสรรค่าแรงงวด ${n}</h2><label>ค่าแรงต้นทุนงวด 100% (บาท)<input name="budget" type="number" step=".01" min="0" required value="${value(cfg()['budget'+n])}"></label><div class="crew-list">${g.jobs.map((name,i)=>{const id=n+'.'+(i+1);return `<label>${id} ${value(name)}<input data-job-pay="${id}" type="number" step=".01" min="0" value="${value(cfg()[id+'labor'])}"></label>`}).join('')}</div><p role="status"></p><footer><button type="button">ยกเลิก</button><button class="crew-save">บันทึกงบและการจัดสรร</button></footer></form>`;
+ document.body.append(dialog);
+ const form=dialog.querySelector('form'),budget=form.elements.budget,inputs=[...dialog.querySelectorAll('[data-job-pay]')];
+ function balance(){
+  const limit=Math.round(Number(budget.value)*100),used=inputs.reduce((s,el)=>s+Math.round(Number(el.value)*100),0);
+  dialog.querySelector('[role=status]').textContent=`จัดสรรแล้ว ${money(used/100)} บาท · ${used>limit?'เกินงบ':'คงเหลือ'} ${money(Math.abs(limit-used)/100)} บาท`;
+  dialog.querySelector('.crew-save').disabled=!budget.value||used>limit;
+  return used<=limit;
+ }
+ form.oninput=balance;form.onsubmit=e=>{e.preventDefault();if(!balance()||!form.reportValidity())return;
+  cfg()['budget'+n]=budget.value;for(const el of inputs)cfg()[el.dataset.jobPay+'labor']=el.value;
+  dialog.close();redraw()
+ };
+ dialog.querySelector('[type=button]').onclick=()=>dialog.close();
+ dialog.onclose=()=>dialog.remove();balance();dialog.showModal();
+ (budget.value&&inputs.find(el=>el.dataset.jobPay===focusJob)||budget).focus();
+}
+function wageMark(amount){
+ const label=money(amount),w=label.length*6.3;
+ return `<svg class="wage-mark" style="max-width:${w/10}em" viewBox="0 0 ${w} 12" aria-label="ค่าแรง ${label} บาท"><title>ค่าแรง ${label} บาท</title><text x="50%" y="9" text-anchor="middle" font-family="sans-serif" font-size="10">${label}</text></svg>`;
+}
+
+
+function statusRecord(){
+ const entries=p().notes||{},key=Object.keys(entries).filter(k=>k<=date).sort().pop();
+ const entry=entries[key];
+ if(entry?.kind==='wage-status')return entry;
+ return {kind:'wage-status',legacy:typeof entry==='string'?entry:''};
+}
+function statusPercent(budget,spent){
+ if(!(Number(budget)>0)||spent===''||spent==null)return '—';
+ return (Number(spent)/Number(budget)*100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
+}
+function statusDate(d){
+ if(!d)return '—';
+ const [y,m,dd]=d.split('-');
+ return `${dd}-${m}-${String(Number(y)+543).slice(-2)}`;
+}
+function statusTable(record,editing){
+ const r=record;
+ function cell(key,label,type,display){
+  if(editing)return `<input name="${key}" aria-label="${label}" type="${type}" ${type==='number'?'min="0" step="0.01"':''} value="${value(r[key])}">`;
+  return `<button type="button" class="status-cell" data-status-key="${key}" aria-label="แก้ไข${label}">${value(display||'—')}</button>`;
+ }
+ const baht=k=>r[k]!==''&&r[k]!=null?money(r[k])+' บาท':'—';
+ return `<table class="wage-status" aria-label="ตารางชี้แจงค่าแรง"><tbody>
+ <tr class="status-budget"><th class="status-side" rowspan="3">สถานะค่าแรงสะสม ณ งวดปัจจุบัน</th><th>ค่าแรงต้นทุนสะสมถึงงวดปัจจุบัน</th><td>${cell('budget','ค่าแรงต้นทุนสะสม','number',baht('budget'))}</td></tr>
+ <tr class="status-spent"><th>ค่าแรง+ค่าเครื่องจักรสะสมถึงวัน update</th><td>${cell('spent','ค่าแรงและค่าเครื่องจักรสะสม','number',baht('spent'))}</td></tr>
+ <tr class="status-percent"><th>สรุปค่าแรงทั้งโครงการ (ถ้าอนุมัติ ณ วัน update)</th><td data-status-ratio>${statusPercent(r.budget,r.spent)}</td></tr>
+ <tr class="status-meta"><th class="status-side">${editing?'งวดงานที่ ':''}${cell('period','งวดงาน','text',r.period?'งวดงานที่ '+r.period:'งวดงานที่ —')}</th><th>วันที่ update</th><td>${cell('updated','วันที่อัปเดต','date',statusDate(r.updated))}</td></tr>
+ <tr class="status-note"><th class="status-side">${cell('remark','หมายเหตุ','text',r.remark?'หมายเหตุ · '+r.remark:'หมายเหตุ')}</th><th>ถ้าชี้แจง</th><td>${cell('clarified','เปอร์เซ็นต์ถ้าชี้แจง','number',r.clarified!==''&&r.clarified!=null?Number(r.clarified).toFixed(2)+'%':'—')}</td></tr>
+ </tbody></table>`;
+}
+function reportStatus(){
+ const r=statusRecord();
+ const old=r.legacy?`<details class="legacy-status"><summary>รายการชี้แจงเดิม</summary><table class="timeline">${r.legacy.split('\n').map(line=>`<tr>${line.split('|').map(t=>`<td>${value(t)}</td>`).join('')}</tr>`).join('')}</table></details>`:'';
+ return `<div class="report-explanation"><h3>ตารางชี้แจงค่าแรง</h3>${statusTable(r,false)}${old}</div>`;
+}
+function editStatus(key){
+ const original=statusRecord(),existing=p().notes?.[date];
+ const draft={...original,updated:existing?.kind==='wage-status'?existing.updated:date};
+ const dialog=document.createElement('dialog');
+ dialog.className='crew-dialog status-editor';
+ dialog.setAttribute('aria-label','แก้ไขตารางชี้แจงค่าแรง');
+ dialog.innerHTML=`<form><h2>ตารางชี้แจงค่าแรง</h2><p>บันทึกสำหรับรายงานวันที่ ${statusDate(date)}</p>${statusTable(draft,true)}<footer><button type="button">ยกเลิก</button><button class="crew-save" type="submit">บันทึกตาราง</button></footer></form>`;
+ document.body.append(dialog);
+ const form=dialog.querySelector('form');
+ form.oninput=()=>{dialog.querySelector('[data-status-ratio]').textContent=statusPercent(form.elements.budget.value,form.elements.spent.value)};
+ form.onsubmit=e=>{
+  e.preventDefault();
+  if(!form.reportValidity())return;
+  p().notes??={};
+  p().notes[date]={...draft,...Object.fromEntries(new FormData(form))};
+  dialog.close();redraw();
+ };
+ form.querySelector('button[type=button]').onclick=()=>dialog.close();
+ dialog.onclose=()=>dialog.remove();
+ dialog.showModal();form.elements[key].focus();
+}
+
+function timeline(){
+ const js=jobs(),first=month+'-01',last=new Date(Date.UTC(+month.slice(0,4),+month.slice(5)+months-1,0,12)).toISOString().slice(0,10),ds=dates(first,last),c={...cfg(),...scoped()},f=forecast(date);
+ const width=$('planner').clientWidth || window.innerWidth;
+ const dailyJobs=new Map();
+ for(const d of ds){
+  const sums=new Map();
+  if(d<=date)for(const a of assignments(d))for(const slot of ['am','pm']){
+   const id=a[slot];if(id)sums.set(id,(sums.get(id)||0)+Number(a.half||0));
+  }
+  dailyJobs.set(d,sums);
+ }
+ const bands=[];
+ if(width>=900 || window.matchMedia('print').matches)bands.push(ds);
+ else{
+  const limit=width<520?7:width<700?14:31;
+  for(const m of new Set(ds.map(d=>d.slice(0,7)))){
+   const days=ds.filter(d=>d.startsWith(m));
+   for(let i=0;i<days.length;i+=limit)bands.push(days.slice(i,i+limit));
+  }
+ }
+ function renderBand(ds){
+ const cells=fn=>ds.map(d=>`<td class="day ${isOff(d)?'offday':''} ${d===c.claim?'due':''}">${fn(d)}</td>`).join('');
+ return `<table class="timeline calendar ${ds.length>62?'dense':ds.length>31?'medium':''} ${mode==='crew'?'crew-mode':''}"><colgroup><col class="task-col"><col class="pay-col"><col class="qty-col"><col class="count-col"><col class="pct-col"><col span="${ds.length}"></colgroup><thead><tr><th rowspan="2" class="item">รายการงาน</th><th rowspan="2">ค่าแรงต้นทุน (บาท)</th><th rowspan="2">ปริมาณ</th><th rowspan="2">วันแผน</th><th rowspan="2">จริง %</th>${[...new Set(ds.map(d=>d.slice(0,7)))].map(m=>`<th colspan="${ds.filter(d=>d.startsWith(m)).length}">${MON[Number(m.slice(5))-1]} ${Number(m.slice(0,4))+543}</th>`).join('')}</tr><tr>${cells(d=>+d.slice(-2))}</tr></thead><tbody>${selected().map(g=>`<tr><th colspan="${ds.length+5}">งวด ${g.n} · มูลค่า ${money(g.price)} บาท · <button class="budget-link" data-wage-budget="${g.n}">งบค่าแรง ${money(c['budget'+g.n]||0)} บาท</button></th></tr>`+js.filter(j=>j.n===g.n).map(j=>`<tr data-job="${j.id}"><td>${j.id} ${value(j.name)}</td><td><button class="budget-link" aria-label="จัดสรรค่าแรงงาน ${j.id}" data-wage-budget="${g.n}" data-focus-job="${j.id}">${c[j.id+'labor']?money(c[j.id+'labor']):'—'}</button></td><td>${value(c[j.id+'qty']||'')} ${value(c[j.id+'unit'])}</td><td>${work(c[j.id+'start'],c[j.id+'end']).filter(d=>scheduled(c,j.id,'start',d)).length}</td><td>${value(latest('progress'+j.id)||'—')}</td>${cells(d=>`<span data-d="${d}" ${mode==='crew'?`role="button" tabindex="0" aria-label="จัดคน งาน ${j.id} วันที่ ${d}"`:''}>${[['start','end','#222'],['rev','revEnd','#246bd2']].map(([a,b,col])=>`<i style="border-top:3px solid ${scheduled(c,j.id,a,d)&&!isOff(d)?col:'transparent'}"></i>`).join('')}<i style="border-top:3px solid ${dailyJobs.get(d).has(j.id)?'#c31e2a':'transparent'}"></i>${dailyJobs.get(d).has(j.id)?wageMark(dailyJobs.get(d).get(j.id)):''}</span>`)}</tr>`).join('')).join('')}<tr class="daily-pay"><th colspan="5">ค่าแรงรวมทุกประเภทต่อวัน (งวดที่เลือก)</th>${cells(d=>d<=date&&p().days[d]?money(js.reduce((s,j)=>s+(dailyJobs.get(d).get(j.id)||0),0)):'')}</tr>${['ค่าแรงโครงสร้างต่อวัน','ค่าเครื่องจักรต่อวัน','ค่าแรงสะสมในช่วงที่แสดง','เครื่องจักรสะสมในช่วงที่แสดง'].map((label,i)=>`<tr class="daily-pay"><th colspan="5">${label}</th>${cells(d=>d<=date&&p().days[d]?money(i<2?(i?day(d).machine||0:costs(d)):Object.keys(p().days).filter(k=>k>=first&&k<=d).reduce((s,k)=>s+(i===2?costs(k):Number(day(k).machine||0)),0)):'')}</tr>`).join('')}</tbody></table>`;
+ }
+ return `<section id="pReport" style="--pay-font:${Number(cfg().payFont)||9}px"><h2>แผนงานประจำงวด ${value(p().name)}</h2><p>งวด ${selected().map(c=>c.n).join(', ')||'—'} · รายงาน ณ ${date} · กำหนดเบิก ${value(c.claim||'—')}</p><p class="legend"><b>━ แผนเดิม</b><b style="color:#2563bb">━ แผนปรับ</b><b style="color:#c73131">━ ทำจริง</b><b style="color:#8165ac">┆ วันเบิก</b></p><div class="scrollplan">${bands.map(renderBand).join('')}</div><div class="report-foot">${summaryCosts(f)}<div class="report-forecast"><p>ต้นทุนสะสม ${f.actual===null?'—':money(f.actual)} บาท · เฉลี่ย 10 วันทำงาน ${f.avg===null?'รอยืนยัน '+(10-f.count)+' วัน':money(f.avg)+' บาท/วัน'} · เหลือ ${f.remaining} วันทำงาน</p><b>คาดการณ์ ณ วันเบิก ${f.estimate===null?'—':money(f.estimate)+' บาท'}　${f.budget>0&&f.estimate!==null?money(100*f.estimate/f.budget)+'%':''}</b></div>${reportStatus()}</div></section>`
+}
+function draw(){
+ if(!site||!DAYS[site])site=Object.keys(DAYS)[0]||'';
+ $('planner').innerHTML=`<h1>วางแผนงวดงาน</h1><div class="pfields"><label>โครงการ / อาคาร<select id="projectPick">${Object.entries((project(),planStore.projects)).map(([id,p])=>`<option value="${value(id)}" ${id===projectId?'selected':''}>${value(p.name)}</option>`)}</select></label><button id="newProject">เพิ่มอาคาร</button><label>วันที่ทำงาน / รายงาน<input id="pDate" type="date" value="${date}"></label></div><nav class="pnav">${['ทะเบียนงวด','แผนและผลงาน','จัดคนรายวัน','รายงานพิมพ์'].map((t,i)=>`<button data-tab="${i}" class="${tab===i?'active':''}">${t}</button>`).join('')}</nav>`+([setup,()=>`<section class="pbox"><h2>แผนและผลงานรายรายการ</h2>${taskFields()}</section>`,workers,()=>`<section class="pbox"><div class="pfields"><label>เดือนเริ่มแสดง<input id="pMonth" type="month" value="${month}"></label><label>จำนวนเดือน<select id="spanMonths">${[1,2,3].map(n=>`<option ${n===months?'selected':''}>${n}</option>`)}</select></label><label>การกดช่องตาราง<select id="dragMode"><option value="crew" ${mode==='crew'?'selected':''}>จัดคนลงงาน</option><option value="start" ${mode==='start'?'selected':''}>แผนเดิม</option><option value="rev" ${mode==='rev'?'selected':''}>แผนปรับ</option></select></label><small>${mode==='crew'?'แตะช่องวันที่ของงานเพื่อเลือกคนช่วงเช้าและบ่าย':'แตะช่องว่างเพื่อเพิ่มวัน แตะบนเส้นเพื่อลบวัน หรือลากเพื่อเพิ่มหรือลบทั้งช่วง'} </small><label>ขนาดตัวเลขค่าแรง<select id="payFont">${[7,9,11,13].map(n=>`<option value="${n}" ${n===(Number(cfg().payFont)||9)?'selected':''}>${n} px</option>`).join('')}</select></label><button id="planPrint">พิมพ์ / PDF</button></div></section>`+timeline()][tab])()
+}
+function redraw(){storePlan();draw()}
+$('openScan').onclick=()=>{$('scanner').hidden=false;$('planner').hidden=true;$('openScan').className='active';$('openPlan').className=''};
+$('openPlan').onclick=()=>{$('scanner').hidden=true;$('planner').hidden=false;$('openPlan').className='active';$('openScan').className='';draw()};
+$('planner').addEventListener('change',e=>{
+ const el=e.target,share=el.dataset.share,k=share?share+'labor':el.dataset.field;
+ if(k && (/labor$/.test(k)||/^budget\d+$/.test(k))){
+  const n=Number(k.match(/\d+/)[0]),budget=Number(cfg()['budget'+n]||0);
+  let amount=Number(el.value);
+  if(share)amount=budget*amount/100;
+  amount=Math.round(amount*100)/100;
+  const previous=Number(cfg()[k]||0),used=allocated(n);
+  if(!el.checkValidity()||(k.endsWith('labor')?amount>previous&&Math.round((used-previous+amount)*100)>Math.round(budget*100):amount<used)){
+   alert('ยอดจัดสรรรวมต้องไม่เกินค่าแรงต้นทุนของงวด');draw();return
+  }
+  cfg()[k]=el.value===''?'':String(amount);redraw();return
+ }
+ if(k&&(k.endsWith(':base')||k.endsWith(':openingMachine'))){
+  const s=scoped(),part=Number(k.endsWith(':openingMachine')?el.value:s.openingMachine||0),total=Number(k.endsWith(':base')?el.value:s.base||0);
+  if(part>total){alert('ค่าเครื่องจักรยกมาต้องไม่เกินยอดยกมารวม');draw();return}
+ }
+ if(k){if(!el.checkValidity()){el.reportValidity();return}if(k.startsWith('progress')&&+el.value>100){alert('ความก้าวหน้าอยู่ระหว่าง 0–100%');draw();return}
+ const obj=k==='machine'||k.startsWith('progress')?editDay():cfg();obj[k]=el.value;if(k==='machine')editDay().closed=false;redraw();return}
+ if(el.dataset.use)cfg()['use'+el.dataset.use]=el.checked;
+ else if(el.dataset.person){const id=el.dataset.person,slot=el.dataset.slot,key=site+'|'+id,record=editDay(),pay=rateOn(id,date),st=G[id]==='st'||GS[G[id]]==='โครงสร้าง';
+ if(st&&pay==null&&el.value){alert('กรอกค่าแรงในหน้าสแกนก่อนจัดคนโครงสร้าง');draw();return}
+ for(const [pid,pr] of Object.entries(planStore.projects)){if(pid===projectId)continue;const other=pr.days[date]?.people?.[key];if(el.value&&other&&(slot==='full'?other.am||other.pm:other[slot])){alert('ช่วงเวลานี้จัดคนลงอาคารอื่นแล้ว');draw();return}}
+ const people=record.people??={},a=people[key]??={};a.struct=st;a.half=(pay||0)/2;if(slot==='full')a.am=a.pm=el.value;else a[slot]=el.value;record.closed=false
+ }else if(el.id==='closed')editDay().closed=el.checked;
+ else if(el.id==='projectPick')projectId=el.value;
+ else if(el.id==='pDate'&&el.value){date=el.value;month=date.slice(0,7)}
+ else if(el.id==='scanSite')site=el.value;
+ else if(el.id==='pMonth'&&el.value)month=el.value;
+ else if(el.id==='spanMonths')months=+el.value;
+ else if(el.id==='payFont')cfg().payFont=Number(el.value);
+ else if(el.id==='dragMode')mode=el.value;
+ else if(el.id==='contractFile'){readContract(el.files[0]);return}else return;
+ redraw()
+});
+
+let cellEditor;
+function openCellEditor(id,d){
+ const job=jobs().find(j=>j.id===id);
+ if(!job)return;
+ const dialog=document.createElement('dialog');
+ dialog.className='crew-dialog';
+ dialog.setAttribute('aria-label','จัดคนลงงาน');
+ document.body.append(dialog);
+ cellEditor={dialog,id,d,site,job};
+ dialog.addEventListener('close',()=>{dialog.remove();cellEditor=null},{once:true});
+ renderCrew();
+ dialog.showModal();
+}
+function renderCrew(){
+ const {dialog,id,d,site:key,job}=cellEditor;
+ const saved=day(d).people||{}, roster=DAYS[key]?.[d]||{};
+ const ids=new Set(Object.keys(roster));
+ for(const [entry,a] of Object.entries(saved)){
+  if(entry.startsWith(key+'|')&&(a.am===id||a.pm===id))ids.add(entry.slice(key.length+1))
+ }
+ const groups=new Map();
+ for(const worker of ids){
+  const type=GS[G[worker]]||'ยังไม่ระบุประเภท';
+  if(!groups.has(type))groups.set(type,[]);
+  groups.get(type).push(worker);
+ }
+ const sites=new Set([...Object.keys(DAYS),...Object.keys(saved).map(v=>v.split('|')[0])]);
+ dialog.innerHTML=`<header><button type="button" class="crew-close" aria-label="ปิด">×</button><small>จัดคนลงงาน · ${value(d)}</small><h2>${value(id)} ${value(job.name)}</h2></header>
+ <label>หน่วยงานสแกน <select class="crew-site">${[...sites].map(s=>`<option value="${value(s)}" ${s===key?'selected':''}>${value(SN[s]||s)}</option>`).join('')}</select></label>
+ <div class="crew-list">${[...groups].map(([type,workers])=>`<h3>${value(type)}</h3>${workers.map(worker=>{
+  const entry=key+'|'+worker,a=saved[entry]||{}, name=R[key]?.[worker]?.n||worker;
+  const slots=['am','pm'].map((slot,i)=>{
+   const other=Object.entries(planStore.projects).find(([pid,pr])=>pid!==projectId&&pr.days[d]?.people?.[entry]?.[slot]);
+   const checked=a[slot]===id, locked=!checked&&(other||!Object.hasOwn(roster,worker));
+   const info=other?other[1].name:(a[slot]&&!checked?'ย้ายจาก '+a[slot]:'');
+   return `<label><input type="checkbox" data-worker="${value(worker)}" data-shift="${slot}" ${checked?'checked':''} ${locked?'disabled':''}>${i?'บ่าย':'เช้า'} ${info?`<small>${value(info)}</small>`:''}</label>`;
+  }).join('');
+  return `<div class="crew-row"><span>${value(name)} <small>${value(worker)}</small></span>${slots}</div>`;
+ }).join('')}`).join('')||'<p>ไม่มีรายชื่อสแกนของหน่วยงานนี้ในวันที่เลือก</p>'}</div>
+ <footer><button class="crew-close">ยกเลิก</button><button class="crew-save">บันทึกการจัดคน</button></footer>`;
+ dialog.querySelectorAll('.crew-close').forEach(b=>b.onclick=()=>dialog.close());
+ dialog.querySelector('.crew-site').onchange=e=>{
+  if([...dialog.querySelectorAll('[data-shift]')].some(el=>el.checked!==el.defaultChecked)&&!confirm('ยกเลิกการเลือกที่ยังไม่ได้บันทึกและเปลี่ยนหน่วยงาน?')){e.target.value=key;return}
+  cellEditor.site=e.target.value;renderCrew()
+ };
+ dialog.querySelector('.crew-save').onclick=saveCrew;
+}
+function saveCrew(){
+ const {dialog,id,d,site:key}=cellEditor,record=day(d),people={...record.people};
+ let changed=false;
+ for(const el of dialog.querySelectorAll('[data-shift]')){
+  if(el.checked===el.defaultChecked)continue;
+  const worker=el.dataset.worker,slot=el.dataset.shift,entry=key+'|'+worker;
+  const a={...people[entry]};
+  if(el.checked){
+   const pay=rateOn(worker,d),struct=G[worker]==='st'||GS[G[worker]]==='โครงสร้าง';
+   if(struct&&pay==null){alert('กรอกค่าแรงก่อนจัดคนโครงสร้าง '+(R[key]?.[worker]?.n||worker));return}
+   if(Object.entries(planStore.projects).some(([pid,pr])=>pid!==projectId&&pr.days[d]?.people?.[entry]?.[slot])){alert('ช่วงเวลานี้ถูกจัดลงอาคารอื่นแล้ว');return}
+   a[slot]=id;a.half=(pay||0)/2;a.struct=struct;
+  }else if(a[slot]===id)a[slot]='';
+  if(a.am||a.pm)people[entry]=a;else delete people[entry];
+  changed=true;
+ }
+ dialog.close();
+ if(changed){
+  p().days[d]={...record,people,closed:false};
+  const left=document.querySelector('.scrollplan').scrollLeft;
+  redraw();document.querySelector('.scrollplan').scrollLeft=left;
+ }
+}
+
+$('planner').addEventListener('click',e=>{
+ const cell=hitDay(e.target);
+ if(mode==='crew'&&cell)openCellEditor(cell.closest('tr').dataset.job,cell.dataset.d)
+});
+$('planner').addEventListener('keydown',e=>{
+ if(mode==='crew'&&e.target.matches('[data-d]')&&['Enter',' '].includes(e.key)){e.preventDefault();e.target.click()}
+});
+let drag=null;
+function hitDay(target){return target?.closest('td.day')?.querySelector('[data-d]')}
+$('planner').addEventListener('pointerdown',e=>{
+ const cell=hitDay(e.target);
+ if(mode==='crew'||!cell||e.button!==0)return;
+ const id=cell.closest('tr').dataset.job,d=cell.dataset.d;
+ if(isOff(d))return;
+ drag={id,d,remove:scheduled(cfg(),id,mode,d),pointer:e.pointerId};
+});
+document.addEventListener('pointerup',e=>{
+ if(!drag||drag.pointer!==e.pointerId)return;
+ const cell=hitDay(document.elementFromPoint(e.clientX,e.clientY));
+ if(cell&&cell.closest('tr').dataset.job===drag.id){
+  const [a,b]=[drag.d,cell.dataset.d].sort();
+  const left=cell.closest('.scrollplan').scrollLeft;
+  paintPlan(drag.id,mode,a,b,drag.remove);
+  redraw();
+  document.querySelector('.scrollplan').scrollLeft=left;
+ }
+ drag=null;
+});
+document.addEventListener('pointercancel',()=>drag=null);
+$('planner').addEventListener('click',e=>{
+ const el=e.target;if(el.dataset.statusKey){editStatus(el.dataset.statusKey);return}if(el.dataset.wageBudget){editWageBudget(Number(el.dataset.wageBudget),el.dataset.focusJob);return}if(el.dataset.tab!==undefined){tab=Number(el.dataset.tab);draw()}
+ if(el.id==='newProject'){const name=prompt('ชื่อโครงการ / อาคาร');if(name?.trim()){projectId=crypto.randomUUID();project().name=name.trim();redraw()}}
+
+ if(el.id==='repeatCrew'){
+  const seen=DAYS[site]?.[date]||{}, previous=day(shift(date,-1)).people||{}, current=editDay(), allowed=new Set(jobs().map(j=>j.id));
+  const people=current.people??={};let count=0;
+  for(const id of Object.keys(seen)){
+   const key=site+'|'+id, old=previous[key], wage=rateOn(id,date), struct=G[id]==='st'||GS[G[id]]==='โครงสร้าง';
+   if(!old||(struct&&wage==null))continue;
+   for(const slot of ['am','pm']){
+    if(!allowed.has(old[slot])||people[key]?.[slot])continue;
+    if(Object.entries(planStore.projects).some(([pid,pr])=>pid!==projectId&&pr.days[date]?.people?.[key]?.[slot]))continue;
+    const a=people[key]??={};a[slot]=old[slot];a.struct=struct;a.half=(wage||0)/2;count++
+   }
+  }
+  if(count)current.closed=false;redraw();alert('คัดลอกแล้ว '+count+' ช่วงงาน')
+ }
+ if(el.id==='planPrint')window.print();
+ if(el.id==='addContract')reviewContract('');
+ if(el.id==='acceptContract'){try{const groups=parseContract($('draftContract').value);if(!groups.length)throw Error('กรุณาใส่เลขงวด มูลค่า และรายการงาน');if(groups.some(c=>p().contract.some(old=>old.n===c.n)))throw Error('เลขงวดซ้ำกับทะเบียนเดิม');p().contract.push(...groups);p().contract.sort((a,b)=>a.n-b.n);redraw()}catch(err){alert(err.message)}}
+});
+function reviewContract(t){$('review').innerHTML=`<h3>ตรวจรายการก่อนบันทึก</h3><label>หัวงวดใช้รูปแบบ งวด 19 | 150000 ตามด้วยงานทีละบรรทัด<textarea id="draftContract" style="min-height:190px">${value(t)}</textarea></label><button id="acceptContract">บันทึกเข้าทะเบียน</button>`}
+function parseContract(t){const groups=[];for(const line of t.split('\n').map(s=>s.trim()).filter(Boolean)){const m=line.match(/^งวด\s*(\d+)\s*\|\s*([\d,.]+)$/);if(m){groups.push({n:+m[1],price:Number(m[2].replace(/,/g,'')),jobs:[],note:''});continue}if(!groups.length)throw Error('ตรวจหัวงวดบรรทัดแรก');const g=groups.at(-1);if(line.includes('มูลค่างานที่เทียบเท่า'))g.note=line;else g.jobs.push(line)}if(groups.some(g=>!g.n||!Number.isFinite(g.price)||!g.jobs.length)||new Set(groups.map(g=>g.n)).size!==groups.length)throw Error('ตรวจเลขงวด จำนวนเงิน และรายการงาน');return groups}
+async function readContract(file){
+ if(!file)return;const view=$('review');view.textContent='กำลังอ่านเอกสาร…';try{const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let lines=[];
+ for(let n=1;n<=pdf.numPages;n++){view.textContent=`กำลังอ่านเอกสาร หน้า ${n}/${pdf.numPages}`;const page=await pdf.getPage(n),content=await page.getTextContent();let t=content.items.map(x=>x.str+(x.hasEOL?'\n':' ')).join('');
+ if(t.trim().length<20){if(!window.Tesseract)await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';script.onload=resolve;script.onerror=reject;document.head.append(script)});const vp=page.getViewport({scale:1.8}),can=document.createElement('canvas');can.width=vp.width;can.height=vp.height;await page.render({canvasContext:can.getContext('2d'),viewport:vp}).promise;t=(await Tesseract.recognize(can,'tha+eng')).data.text}
+ lines.push(...t.split('\n'))}
+ const draft=[];for(let l of lines){l=l.trim();const h=l.match(/งวด\s*(?:งาน)?\s*(?:ที่)?\s*(\d+).*?([\d,]+\.\d{2})/);if(h)draft.push(`งวด ${h[1]} | ${h[2]}`);else if(/^[•\-–]|ได้ทำงาน|หรือมูลค่า/.test(l))draft.push(l.replace(/^[•\-–]\s*/,''))}
+ if(view.isConnected)reviewContract(draft.length?draft.join('\n'):lines.join('\n'))
+ }catch{if(view.isConnected){reviewContract('');$('review').prepend('อ่าน PDF ไม่สำเร็จ ตรวจอินเทอร์เน็ตหรือกรอกรายการด้านล่าง')}}}
+$('openPlan').click();
+
+
+let reportWidth=window.innerWidth;
+function resizeReport(){
+ const report=$('pReport');
+ if(report && !$('planner').hidden)report.outerHTML=timeline();
+}
+window.addEventListener('resize',()=>{
+ if(window.innerWidth!==reportWidth){reportWidth=window.innerWidth;resizeReport()}
+});
+window.addEventListener('beforeprint',resizeReport);
+window.addEventListener('afterprint',()=>requestAnimationFrame(resizeReport));
+
+</script></body>
 </html>
