@@ -231,6 +231,17 @@ button,select,input{font:inherit;color:inherit}
 .status-editor input{width:100%;min-width:0;box-sizing:border-box;padding:4px 2px;font:inherit;border:1px solid #87978f;border-radius:3px;background:white;color:#19251f;text-align:center}
 .status-editor input:focus{outline:2px solid #165943}
 @media(max-width:520px){.status-editor{padding:10px}.status-editor input[type=date]{font-size:11px}.status-editor .wage-status tr>*:last-child{width:32%}}
+#pReport .installment-details{margin:0 0 12px;padding:8px 12px;border:1px solid var(--ln);border-radius:6px}
+.installment-details h3{margin:0 0 4px;font-size:14px}
+.installment-details dl{margin:0}
+.installment-details dl>div{display:grid;grid-template-columns:minmax(64px,12%) minmax(0,1fr);gap:8px;padding:3px 0;line-height:1.45;overflow-wrap:anywhere}
+.installment-details dt{font-weight:700}
+.installment-details dd{margin:0}
+@media print{
+ #pReport .installment-details{margin:0;padding:.75mm 1mm;border:1px solid #747a77;border-bottom:0;border-radius:0;break-inside:avoid-page}
+ #pReport .installment-details h3{margin:0 0 .4mm;font-size:8pt}
+ #pReport .installment-details dl>div{grid-template-columns:23mm minmax(0,1fr);gap:1mm;padding:.25mm 0;font-size:7pt;line-height:1.2}
+}
 
 </style></head>
 <body>
@@ -1052,6 +1063,16 @@ function editStatus(key){
  dialog.showModal();form.elements[key].focus();
 }
 
+function installmentDetails(installments){
+ if(!installments.length)return '';
+ return `<section class="installment-details" aria-labelledby="installment-details-title">
+  <h3 id="installment-details-title">รายละเอียดงวดงาน</h3>
+  <dl>${installments.map(({n,jobs})=>`<div>
+   <dt>${value(installmentLabel(n))}</dt>
+   <dd>${jobs.map(value).join(' · ')}</dd>
+  </div>`).join('')}</dl>
+ </section>`;
+}
 function timeline(){
  const js=jobs(),first=month+'-01',last=new Date(Date.UTC(+month.slice(0,4),+month.slice(5)+months-1,0,12)).toISOString().slice(0,10),ds=dates(first,last),c={...cfg(),...scoped()},f=forecast(date);
  const width=$('planner').clientWidth || window.innerWidth;
@@ -1076,7 +1097,7 @@ function timeline(){
  const cells=fn=>ds.map(d=>`<td class="day ${isOff(d)?'offday':''} ${d===c.claim?'due':''}">${fn(d)}</td>`).join('');
  return `<table class="timeline calendar ${ds.length>62?'dense':ds.length>31?'medium':''} ${mode==='crew'?'crew-mode':''}"><colgroup><col class="task-col"><col class="pay-col"><col class="qty-col"><col class="count-col"><col class="pct-col"><col span="${ds.length}"></colgroup><thead><tr><th rowspan="2" class="item">รายการงาน</th><th rowspan="2">ค่าแรงต้นทุน (บาท)</th><th rowspan="2">ปริมาณ</th><th rowspan="2">วันแผน</th><th rowspan="2">จริง %</th>${[...new Set(ds.map(d=>d.slice(0,7)))].map(m=>`<th colspan="${ds.filter(d=>d.startsWith(m)).length}">${MON[Number(m.slice(5))-1]} ${Number(m.slice(0,4))+543}</th>`).join('')}</tr><tr>${cells(d=>+d.slice(-2))}</tr></thead><tbody>${selected().map(g=>`<tr><th colspan="${ds.length+5}">${value(installmentLabel(g.n))} · มูลค่า ${money(g.price)} บาท · <button class="budget-link" data-wage-budget="${value(g.n)}">งบค่าแรง ${money(c['budget'+g.n]||0)} บาท</button></th></tr>`+js.filter(j=>j.n===g.n).map(j=>`<tr data-job="${value(j.id)}"><td>${value(j.id)} ${value(j.name)}</td><td><button class="budget-link" aria-label="จัดสรรค่าแรงงาน ${value(j.id)}" data-wage-budget="${value(g.n)}" data-focus-job="${value(j.id)}">${c[j.id+'labor']?money(c[j.id+'labor']):'—'}</button></td><td>${value(c[j.id+'qty']||'')} ${value(c[j.id+'unit'])}</td><td>${work(c[j.id+'start'],c[j.id+'end']).filter(d=>scheduled(c,j.id,'start',d)).length}</td><td>${value(latest('progress'+j.id)||'—')}</td>${cells(d=>`<span data-d="${d}" ${mode==='crew'?`role="button" tabindex="0" aria-label="จัดคน งาน ${value(j.id)} วันที่ ${d}"`:''}>${[['start','end','#222'],['rev','revEnd','#246bd2']].map(([a,b,col])=>`<i style="border-top:3px solid ${scheduled(c,j.id,a,d)&&!isOff(d)?col:'transparent'}"></i>`).join('')}<i style="border-top:3px solid ${dailyJobs.get(d).has(j.id)?'#c31e2a':'transparent'}"></i>${dailyJobs.get(d).has(j.id)?wageMark(dailyJobs.get(d).get(j.id)):''}</span>`)}</tr>`).join('')).join('')}<tr class="daily-pay"><th colspan="5">ค่าแรงรวมทุกประเภทต่อวัน (งวดที่เลือก)</th>${cells(d=>d<=date&&p().days[d]?money(js.reduce((s,j)=>s+(dailyJobs.get(d).get(j.id)||0),0)):'')}</tr>${['ค่าแรงโครงสร้างต่อวัน','ค่าเครื่องจักรต่อวัน','ค่าแรงสะสมในช่วงที่แสดง','เครื่องจักรสะสมในช่วงที่แสดง'].map((label,i)=>`<tr class="daily-pay"><th colspan="5">${label}</th>${cells(d=>d<=date&&p().days[d]?money(i<2?(i?day(d).machine||0:costs(d)):Object.keys(p().days).filter(k=>k>=first&&k<=d).reduce((s,k)=>s+(i===2?costs(k):Number(day(k).machine||0)),0)):'')}</tr>`).join('')}</tbody></table>`;
  }
- return `<section id="pReport" style="--pay-font:${Number(cfg().payFont)||9}px"><h2>แผนงานประจำงวด ${value(p().name)}</h2><p>รายการงวด ${selected().map(c=>value(c.n)).join(', ')||'—'} · รายงาน ณ ${date} · กำหนดเบิก ${value(c.claim||'—')}</p><p class="legend"><b>━ แผนเดิม</b><b style="color:#2563bb">━ แผนปรับ</b><b style="color:#c73131">━ ทำจริง</b><b style="color:#8165ac">┆ วันเบิก</b></p><div class="scrollplan">${bands.map(renderBand).join('')}</div><div class="report-foot">${summaryCosts(f)}<div class="report-forecast"><p>ต้นทุนสะสม ${f.actual===null?'—':money(f.actual)} บาท · เฉลี่ย 10 วันทำงาน ${f.avg===null?'รอยืนยัน '+(10-f.count)+' วัน':money(f.avg)+' บาท/วัน'} · เหลือ ${f.remaining} วันทำงาน</p><b>คาดการณ์ ณ วันเบิก ${f.estimate===null?'—':money(f.estimate)+' บาท'}　${f.budget>0&&f.estimate!==null?money(100*f.estimate/f.budget)+'%':''}</b></div>${reportStatus()}</div></section>`
+ return `<section id="pReport" style="--pay-font:${Number(cfg().payFont)||9}px"><h2>แผนงานประจำงวด ${value(p().name)}</h2><p>รายการงวด ${selected().map(c=>value(c.n)).join(', ')||'—'} · รายงาน ณ ${date} · กำหนดเบิก ${value(c.claim||'—')}</p><p class="legend"><b>━ แผนเดิม</b><b style="color:#2563bb">━ แผนปรับ</b><b style="color:#c73131">━ ทำจริง</b><b style="color:#8165ac">┆ วันเบิก</b></p>${installmentDetails(selected())}<div class="scrollplan">${bands.map(renderBand).join('')}</div><div class="report-foot">${summaryCosts(f)}<div class="report-forecast"><p>ต้นทุนสะสม ${f.actual===null?'—':money(f.actual)} บาท · เฉลี่ย 10 วันทำงาน ${f.avg===null?'รอยืนยัน '+(10-f.count)+' วัน':money(f.avg)+' บาท/วัน'} · เหลือ ${f.remaining} วันทำงาน</p><b>คาดการณ์ ณ วันเบิก ${f.estimate===null?'—':money(f.estimate)+' บาท'}　${f.budget>0&&f.estimate!==null?money(100*f.estimate/f.budget)+'%':''}</b></div>${reportStatus()}</div></section>`
 }
 function draw(){
  if(!site||!DAYS[site])site=Object.keys(DAYS)[0]||'';
